@@ -1,0 +1,36 @@
+# Python Virtual Environment & Cache
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Project Database & Upload Storage
+*.db
+*.sqlite
+diligence_copilot.db
+storage/
+uploads/
+
+# Node.js & Frontend Build Outputs
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.npm/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Directories
+.vscode/
+.idea/
+*.swp
+*.swo

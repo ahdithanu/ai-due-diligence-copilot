@@ -1,0 +1,118 @@
+name: AI Due Diligence Copilot CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-lint-and-test:
+    name: Backend Lint & Pytest Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax & Lint check
+        run: |
+          python -m py_compile backend/main.py backend/worker.py backend/services/queue_service.py
+
+      - name: Run Pytest suite
+        run: |
+          pytest tests/ -v --capture=no
+
+  frontend-build:
+    name: Frontend Build & TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend static bundle
+        run: |
+          cd frontend
+          npm run build
+
+  container-image-build:
+    name: Docker Image Build Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Dockerfile.api
+        run: |
+          docker build -f Dockerfile.api -t diligence-api:ci .
+
+      - name: Build Dockerfile.worker
+        run: |
+          docker build -f Dockerfile.worker -t diligence-worker:ci .
+
+      - name: Build Dockerfile.frontend
+        run: |
+          docker build -f Dockerfile.frontend -t diligence-frontend:ci .
+
+  readiness-and-canary-checks:
+    name: System & Queue Readiness Verification
+    needs: [backend-lint-and-test, container-image-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Canary & Worker Readiness Check
+        run: |
+          python -c "
+          import asyncio
+          from backend.db.database import init_db, AsyncSessionLocal
+          from backend.services.queue_service import QueueService
+          from backend.worker import process_next_job
+          from backend.domain.schemas import JobType
+
+          async def run_check():
+              await init_db()
+              async with AsyncSessionLocal() as db:
+                  job = await QueueService.enqueue_job(db, job_type=JobType.CANARY_TEST.value)
+                  processed = await process_next_job(db)
+                  assert processed is not None
+                  assert processed.status == 'COMPLETED'
+                  print('Worker readiness check PASSED cleanly.')
+
+          asyncio.run(run_check())
+          "
