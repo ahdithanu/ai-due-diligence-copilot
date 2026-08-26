@@ -16,6 +16,7 @@ import { SensitivityStressView } from './components/SensitivityStressView';
 import { DiligenceChatView } from './components/DiligenceChatView';
 import { ICAudioDebateView } from './components/ICAudioDebateView';
 import { LPTeaserView } from './components/LPTeaserView';
+import { VectorRAGExplorer } from './components/VectorRAGExplorer';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -31,8 +32,9 @@ export const App: React.FC = () => {
 
   // Top Level Navigation Tab
   const [mainNavTab, setMainNavTab] = useState<
-    'workspaces' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops'
+    'workspaces' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag'
   >('workspaces');
+
 
   // Sub tab within workspace view
   const [activeTab, setActiveTab] = useState<'graph' | 'evidence' | 'financials' | 'ic_debate' | 'memo'>('graph');
@@ -296,6 +298,10 @@ export const App: React.FC = () => {
       case 'failure_lab':
         setMainNavTab('failure_lab');
         break;
+      case 'vector_rag':
+      case 'rag':
+        setMainNavTab('vector_rag');
+        break;
       case 'risk_radar':
         setMainNavTab('risk_radar');
         break;
@@ -463,6 +469,16 @@ export const App: React.FC = () => {
               >
                 <span>🚀</span> FDE Ops &amp; Onboarding
               </button>
+              <button
+                onClick={() => setMainNavTab('vector_rag')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'vector_rag'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>🔍</span> Vector RAG
+              </button>
             </nav>
           </div>
 
@@ -503,6 +519,11 @@ export const App: React.FC = () => {
           <FailureLabView />
         ) : mainNavTab === 'fde_ops' ? (
           <FDEOperationsView />
+        ) : mainNavTab === 'vector_rag' ? (
+          <VectorRAGExplorer
+            selectedInvestmentId={selectedInvestmentId}
+            investments={investments}
+          />
         ) : !selectedInvestmentId ? (
           <InvestmentsDashboard
             investments={investments}

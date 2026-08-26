@@ -534,3 +534,32 @@ class SensitivityRequest(BaseModel):
 class ChatRequest(BaseModel):
     question: str
 
+
+class RAGSearchResult(BaseModel):
+    id: str
+    document_name: str
+    page_number: Optional[int] = None
+    section_title: Optional[str] = None
+    snippet: str
+    hybrid_score: float
+    vector_score: float
+    keyword_score: float
+    confidence: float
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class RAGQueryRequest(BaseModel):
+    query: str
+    top_k: int = 5
+    min_hybrid_score: float = 0.0
+    investment_id: Optional[str] = None
+
+
+class RAGQueryResponse(BaseModel):
+    results: List[RAGSearchResult]
+    total_results: int
+    query_time_ms: float
+    top_k: int
+    min_hybrid_score: float
+
+

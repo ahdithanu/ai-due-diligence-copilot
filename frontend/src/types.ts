@@ -474,3 +474,32 @@ export interface ICAudioScript {
   speakers: ICAudioSpeaker[];
   turns: ICAudioTurn[];
 }
+
+export interface RAGSearchResult {
+  id: string;
+  document_name: string;
+  page_number?: number;
+  section_title?: string;
+  snippet: string;
+  hybrid_score: number;
+  vector_score: number;
+  keyword_score: number;
+  confidence: number;
+  metadata?: Record<string, any>;
+}
+
+export interface RAGQueryRequest {
+  query: string;
+  top_k: number;
+  min_hybrid_score: number;
+  investment_id?: string;
+}
+
+export interface RAGQueryResponse {
+  results: RAGSearchResult[];
+  total_results: number;
+  query_time_ms: number;
+  top_k: number;
+  min_hybrid_score: number;
+}
+
