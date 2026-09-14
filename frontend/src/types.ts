@@ -503,3 +503,118 @@ export interface RAGQueryResponse {
   min_hybrid_score: number;
 }
 
+// ==========================================
+// Enterprise Security & Governance Types
+// ==========================================
+
+export type RoleName = 'IC Partner' | 'Deal Lead' | 'Analyst' | 'LP Viewer';
+
+export interface UserRole {
+  role: RoleName;
+  title: string;
+  permissions: string[];
+  description?: string;
+}
+
+export interface TenantContext {
+  tenant_id: string;
+  tenant_name: 'Apex SaaS Capital' | 'Horizon Buyout Fund' | string;
+  active_role: RoleName;
+  allowed_roles: RoleName[];
+  data_retention_policy: string;
+  kms_key_id: string;
+  isolation_tier: 'LOGICAL_RLS' | 'DEDICATED_SCHEMA' | 'PHYSICAL_ISOLATION';
+  created_at?: string;
+  org_id?: string;
+  org_name?: string;
+  user_id?: string;
+  user_email?: string;
+  role?: string;
+}
+
+export interface DLPFinding {
+  entity_type: 'SSN' | 'CREDIT_CARD' | 'EMAIL' | 'PHONE' | 'API_KEY' | string;
+  original_text: string;
+  redacted_token: string;
+  start_offset: number;
+  end_offset: number;
+  confidence_score: number;
+}
+
+export interface DLPScanResult {
+  scan_id: string;
+  timestamp: string;
+  input_text: string;
+  redacted_text: string;
+  findings: DLPFinding[];
+  entities_detected_count: number;
+  scan_duration_ms: number;
+  status: 'CLEAN' | 'REDACTED' | 'FLAGGED';
+  original_text?: string;
+  sanitized_text?: string;
+  redacted_entities_count?: number;
+  detected_entity_types?: string[];
+  is_clean?: boolean;
+}
+
+export interface AuditLogRecord {
+  id: string;
+  timestamp: string;
+  actor: string;
+  role: RoleName | string;
+  action: string;
+  resource: string;
+  client_ip: string;
+  hash: string;
+  previous_hash?: string;
+  chain_verified: boolean;
+  tenant_id?: string;
+  status?: 'SUCCESS' | 'DENIED' | 'FLAGGED';
+  actor_id?: string;
+  actor_role?: string;
+  org_id?: string;
+  resource_type?: string;
+  resource_id?: string;
+  prev_hash?: string;
+  entry_hash?: string;
+}
+
+export interface KMSKeyRecord {
+  key_id: string;
+  alias: string;
+  tenant_id: string;
+  algorithm: string;
+  state: 'ACTIVE' | 'ROTATING' | 'SHREDDED' | 'DISABLED';
+  created_at: string;
+  last_rotated_at: string;
+  cmk_arn: string;
+  key_versions_count: number;
+  auto_rotation_days: number;
+  org_id?: string;
+  status?: string;
+}
+
+export interface SOC2ControlItem {
+  id: string;
+  name: string;
+  status: 'COMPLIANT' | 'NEEDS_REVIEW' | 'NON_COMPLIANT';
+  score_pct: number;
+  evidence_url?: string;
+  description: string;
+  last_audited: string;
+}
+
+export interface SOC2Report {
+  report_id: string;
+  audit_period: string;
+  compliance_score_pct: number;
+  audit_readiness_status: 'Audit Ready' | 'In Progress' | 'Action Required';
+  certifying_firm: string;
+  controls: SOC2ControlItem[];
+  last_updated: string;
+  status?: string;
+  controls_evaluated?: number;
+  controls_passed?: number;
+  details?: Record<string, any>;
+}
+

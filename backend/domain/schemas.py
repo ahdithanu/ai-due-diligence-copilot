@@ -563,3 +563,91 @@ class RAGQueryResponse(BaseModel):
     min_hybrid_score: float
 
 
+# CISO & Enterprise Governance Schemas
+class UserRole(str, Enum):
+    SUPER_ADMIN = "SUPER_ADMIN"
+    IC_PARTNER = "IC_PARTNER"
+    DEAL_LEAD = "DEAL_LEAD"
+    ANALYST = "ANALYST"
+    EXTERNAL_LP_VIEWER = "EXTERNAL_LP_VIEWER"
+
+
+class TenantContext(BaseModel):
+    org_id: str
+    org_name: str
+    user_id: str
+    user_email: str
+    role: UserRole
+
+
+class DLPScanRequest(BaseModel):
+    text: Optional[str] = None
+    input_text: Optional[str] = None
+
+
+class KMSRevokeRequest(BaseModel):
+    org_id: str
+
+
+class DLPFinding(BaseModel):
+    entity_type: str
+    original_text: str
+    redacted_token: str
+    start_offset: int
+    end_offset: int
+    confidence_score: float = 1.0
+
+
+class DLPScanResult(BaseModel):
+    original_text: str
+    sanitized_text: str
+    redacted_entities_count: int = 0
+    detected_entity_types: List[str] = Field(default_factory=list)
+    is_clean: bool = True
+    findings: List[DLPFinding] = Field(default_factory=list)
+    redacted_text: Optional[str] = None
+    scan_id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    status: Optional[str] = "CLEAN"
+
+
+class AuditLogRecord(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    actor_id: str
+    actor_role: str
+    org_id: str
+    action: str
+    resource_type: str
+    resource_id: str
+    client_ip: str = "127.0.0.1"
+    prev_hash: str = "0"
+    entry_hash: str = ""
+    chain_verified: bool = True
+
+
+class KMSKeyRecord(BaseModel):
+    key_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    org_id: str
+    status: str = "ACTIVE"  # "ACTIVE", "REVOKED", "SHREDDED"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    algorithm: str = "AES-256-GCM"
+    alias: Optional[str] = None
+    cmk_arn: Optional[str] = None
+    last_rotated_at: Optional[datetime] = None
+
+
+class SOC2Report(BaseModel):
+    report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    compliance_score_pct: float
+    status: str
+    controls_evaluated: int
+    controls_passed: int
+    details: Dict[str, Any] = Field(default_factory=dict)
+    audit_period: Optional[str] = "2026-Q1/Q3 Continuous Monitoring"
+    audit_readiness_status: Optional[str] = "Audit Ready"
+    certifying_firm: Optional[str] = "Ernst & Young / CISO Enterprise Audit"
+    controls: List[Dict[str, Any]] = Field(default_factory=list)
+    last_updated: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+
