@@ -138,6 +138,88 @@ def get_default_traditional_buyout_config() -> DeploymentConfig:
         }
     )
 
+def get_default_cre_retail_strip_config() -> DeploymentConfig:
+    return DeploymentConfig(
+        deployment_id="cre_retail_strip_default",
+        customer_name="Claymore Retail Partners",
+        deployment_name="Small-Bay Neighborhood Retail Strip Buy Box",
+        investment_strategy="cre_retail_strip_center",
+        required_diligence_sections=[
+            "rent_roll_and_occupancy_audit",
+            "tenant_concentration_and_mix",
+            "lease_structure_and_cam_reconciliation",
+            "capex_roof_and_hvac_useful_life",
+            "location_traffic_and_shadow_anchor",
+            "underwriting_and_dscr_returns"
+        ],
+        financial_thresholds={
+            "min_units": 5.0,
+            "max_units": 12.0,
+            "min_sf": 8000.0,
+            "max_sf": 25000.0,
+            "min_price": 1500000.0,
+            "max_price": 4000000.0,
+            "min_price_per_sf": 100.0,
+            "max_price_per_sf": 200.0,
+            "min_occupancy_pct": 80.0,
+            "max_occupancy_pct": 100.0,
+            "min_walt_years": 3.0,
+            "max_single_tenant_concentration_pct": 30.0,
+            "max_restaurant_exposure_pct": 25.0,
+            "min_traffic_vpd": 15000.0,
+            "min_parking_ratio_per_1000_sf": 4.0
+        },
+        risk_thresholds={
+            "min_vintage_year": "1985",
+            "max_vacancy_pct": "20.0%",
+            "roof_hvac_useful_life_remaining_years": "5"
+        },
+        required_evidence_types=[
+            "certified_rent_roll",
+            "t12_operating_statement",
+            "cam_reconciliation_audit",
+            "property_condition_report",
+            "traffic_count_study"
+        ],
+        evaluation_thresholds={
+            "min_quality_score": 0.85,
+            "max_iterations": 3.0
+        },
+        human_escalation_rules=[
+            "single_tenant_concentration_above_30_pct",
+            "restaurant_rent_roll_above_25_pct",
+            "in_place_rents_above_market_rate",
+            "remaining_roof_or_hvac_life_unknown",
+            "occupancy_below_80_pct",
+            "vintage_prior_to_1985"
+        ],
+        enabled_models=["gemini-2.5-pro", "gemini-2.5-flash"],
+        model_roles={
+            "synthesizer": "gemini-2.5-pro",
+            "extractor": "gemini-2.5-flash",
+            "evaluator": "gemini-2.5-pro"
+        },
+        allowed_tools=[
+            "financial_calculator",
+            "document_parser",
+            "evidence_extractor",
+            "benchmarking_service"
+        ],
+        output_requirements={
+            "format": "cre_memo_pdf",
+            "include_citations": True,
+            "min_confidence_score": 0.85
+        },
+        custom_terminology={
+            "SF": "Square Footage",
+            "WALT": "Weighted Average Lease Term",
+            "NNN": "Triple Net Lease (Taxes, Insurance, CAM paid by tenant)",
+            "CAM": "Common Area Maintenance",
+            "VPD": "Vehicles Per Day",
+            "DSCR": "Debt Service Coverage Ratio"
+        }
+    )
+
 async def create_deployment(db: AsyncSession, config: DeploymentConfig) -> DeploymentModel:
     db_dep = DeploymentModel(
         id=config.deployment_id,
@@ -169,3 +251,8 @@ async def init_seed_deployments(db: AsyncSession):
     existing_buyout = await get_deployment(db, buyout_config.deployment_id)
     if not existing_buyout:
         await create_deployment(db, buyout_config)
+
+    cre_config = get_default_cre_retail_strip_config()
+    existing_cre = await get_deployment(db, cre_config.deployment_id)
+    if not existing_cre:
+        await create_deployment(db, cre_config)

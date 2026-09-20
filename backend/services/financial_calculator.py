@@ -354,6 +354,172 @@ def calculate_working_capital(
     )
 
 
+# --- CRE Small-Bay Retail & Multifamily "Buy Box" Deterministic Calculations ---
+
+def calculate_price_per_sf(
+    purchase_price: float,
+    total_sf: float,
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates acquisition price per square foot.
+    Buy box target: $100 - $200 / SF.
+    """
+    if total_sf <= 0:
+        return None
+    val = purchase_price / total_sf
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name="Price_Per_SF",
+        value=round(val, 2),
+        unit="USD/SF",
+        period=period or "N/A",
+        formula="Purchase_Price / Total_SF",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+def calculate_cre_occupancy(
+    occupied_sf: float,
+    total_sf: float,
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates physical or economic occupancy rate percentage.
+    Buy box target: 80.0% - 100.0% (max 20% vacancy).
+    """
+    if total_sf <= 0:
+        return None
+    val = (occupied_sf / total_sf) * 100.0
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name="Occupancy_Rate",
+        value=round(val, 2),
+        unit="percentage",
+        period=period or "N/A",
+        formula="(Occupied_SF / Total_SF) * 100",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+def calculate_tenant_concentration(
+    top_tenant_rent: float,
+    total_gross_rent: float,
+    tenant_name: str = "Top_Tenant",
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates single tenant rent concentration percentage.
+    Buy box rule: No single tenant > 30% of gross rent.
+    """
+    if total_gross_rent <= 0:
+        return None
+    val = (top_tenant_rent / total_gross_rent) * 100.0
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name=f"Tenant_Concentration_{tenant_name.replace(' ', '_')}",
+        value=round(val, 2),
+        unit="percentage",
+        period=period or "N/A",
+        formula="(Top_Tenant_Rent / Total_Gross_Rent) * 100",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+def calculate_restaurant_exposure(
+    restaurant_rent: float,
+    total_gross_rent: float,
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates restaurant tenant exposure as a percentage of total rent roll.
+    Buy box rule: Restaurants capped strictly under 25% of rent roll.
+    """
+    if total_gross_rent <= 0:
+        return None
+    val = (restaurant_rent / total_gross_rent) * 100.0
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name="Restaurant_Exposure",
+        value=round(val, 2),
+        unit="percentage",
+        period=period or "N/A",
+        formula="(Restaurant_Rent / Total_Gross_Rent) * 100",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+def calculate_walt(
+    lease_terms: List[Dict[str, float]],
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates Weighted Average Lease Term (WALT) in years:
+    Sum(Annual_Rent * Remaining_Years) / Sum(Annual_Rent).
+    Buy box rule: WALT >= 3.0 years.
+    Each item in lease_terms must have keys: 'annual_rent' (or 'rent') and 'remaining_years' (or 'years').
+    """
+    total_rent = 0.0
+    weighted_years_sum = 0.0
+
+    for lease in lease_terms:
+        rent = lease.get("annual_rent", lease.get("rent", 0.0))
+        years = lease.get("remaining_years", lease.get("years", 0.0))
+        if rent > 0 and years >= 0:
+            total_rent += rent
+            weighted_years_sum += rent * years
+
+    if total_rent <= 0:
+        return None
+
+    val = weighted_years_sum / total_rent
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name="WALT",
+        value=round(val, 2),
+        unit="years",
+        period=period or "N/A",
+        formula="Sum(Annual_Rent * Remaining_Years) / Sum(Annual_Rent)",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+def calculate_parking_ratio(
+    parking_spaces: int,
+    total_sf: float,
+    period: str = "N/A",
+    evidence_ids: Optional[List[str]] = None
+) -> Optional[FinancialMetricRecord]:
+    """
+    Calculates parking ratio per 1,000 square feet.
+    Buy box rule: At least 4.0 parking spaces per 1,000 SF.
+    """
+    if total_sf <= 0:
+        return None
+    val = float(parking_spaces) / (total_sf / 1000.0)
+    return FinancialMetricRecord(
+        id=str(uuid.uuid4()),
+        metric_name="Parking_Ratio",
+        value=round(val, 2),
+        unit="spaces_per_1000_sf",
+        period=period or "N/A",
+        formula="Parking_Spaces / (Total_SF / 1000)",
+        input_evidence_ids=evidence_ids or [],
+        is_deterministic=True,
+        confidence=1.0
+    )
+
+
 def extract_and_calculate_metrics(state: DiligenceState) -> List[FinancialMetricRecord]:
     """
     Parses financial inputs from state.evidence_records (or metadata) and executes all available

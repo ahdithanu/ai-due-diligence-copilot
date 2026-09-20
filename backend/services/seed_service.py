@@ -65,7 +65,34 @@ DEMO_DEALS = [
             "Unit Economics: CAC is $45K with ACV of $120K yielding 120% NRR across 85 active enterprise deployments.\n"
             "Moat: Proprietary SLAM navigation algorithms and hardware-software integration patents.\n"
             "Risk Factors: Supply chain component availability and regulatory safety standards."
-        )
+        ),
+        "deployment_id": "growth_saas_default"
+    },
+    {
+        "name": "Oakridge Shoppes",
+        "industry": "Commercial Real Estate (Small-Bay Retail Strip)",
+        "target_round": "Acquisition",
+        "check_size_usd": 2400000.0,
+        "doc_filename": "oakridge_shoppes_cre_vault.txt",
+        "doc_content": (
+            "Oakridge Shoppes Acquisition Due Diligence Vault & Offering Memorandum\n"
+            "Asset Overview: Unanchored neighborhood retail strip center shadow-anchored by adjacent Kroger grocery.\n"
+            "Physical Specifications: 14,200 SF gross leasable area across 7 multi-tenant bays (averaging ~2,028 SF per bay). Built in 1989.\n"
+            "Underwriting & Pricing: Asking purchase price of $2,400,000 ($169.01/SF), falling directly within Midwest/Southeast target range.\n"
+            "Occupancy & Rent Roll: 12,400 SF occupied across 6 active tenants representing 87.32% physical occupancy (12.68% vacancy).\n"
+            "Tenant Composition & Concentration:\n"
+            "- Oakridge Family Dental (2,900 SF, $58,800 annual NNN rent) represents 24.5% of total gross rent (strictly below 30% cap).\n"
+            "- Main Street Pizzeria (2,400 SF, $50,400 annual NNN rent) represents 21.0% of total gross rent (strictly below 25% restaurant ceiling).\n"
+            "- Nail Salon & Spa (1,800 SF, $37,800 annual NNN rent).\n"
+            "- Veterinary Urgent Care (2,200 SF, $46,200 annual NNN rent).\n"
+            "- State Farm Insurance Agency (1,600 SF, $33,600 annual NNN rent).\n"
+            "- Local Dry Cleaner (1,500 SF, $31,500 annual NNN rent).\n"
+            "- Total In-Place Gross Rent: $240,000 annually ($19.35/SF NNN vs $21.50/SF market rate).\n"
+            "Lease Terms & Quality: 100% NNN leases with full annual CAM reconciliation. Portfolio WALT is 3.82 years.\n"
+            "Location & Access: Hard signalized corner with 18,400 Vehicles Per Day (VPD) traffic count, dual full-movement curb cuts, and 62 dedicated surface parking spaces (4.37 stalls per 1,000 SF).\n"
+            "Capital Expenditures & Roof/HVAC: Roof replaced in 2018 with 12 years remaining warranty. 5 of 7 RTUs replaced between 2019-2022 (8+ years remaining useful life). Parking lot sealed and restriped in 2023."
+        ),
+        "deployment_id": "cre_retail_strip_default"
     }
 ]
 
@@ -74,7 +101,7 @@ extractor_service = EvidenceExtractorService()
 async def init_seed_investments_if_empty(db: AsyncSession):
     """
     Checks if database has any existing investments.
-    If 0, seeds 3 realistic institutional demo investment workspaces
+    If 0, seeds realistic institutional demo investment workspaces
     with documents, chunks, and extracted evidence.
     """
     res = await db.execute(select(func.count(InvestmentModel.id)))
@@ -84,6 +111,7 @@ async def init_seed_investments_if_empty(db: AsyncSession):
 
     for deal in DEMO_DEALS:
         inv_id = str(uuid.uuid4())
+        dep_id = deal.get("deployment_id", "growth_saas_default")
         initial_state = DiligenceState(
             investment_id=inv_id,
             company_name=deal["name"],
@@ -91,7 +119,7 @@ async def init_seed_investments_if_empty(db: AsyncSession):
             target_round=deal["target_round"],
             check_size_usd=deal["check_size_usd"],
             status=DiligenceStatus.CREATED,
-            deployment_id="growth_saas_default"
+            deployment_id=dep_id
         )
 
         db_inv = InvestmentModel(
