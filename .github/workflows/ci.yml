@@ -33,7 +33,7 @@ jobs:
 
       - name: Run Pytest suite
         run: |
-          pytest tests/ -v --capture=no
+          python -m pytest tests/ -v --capture=no
 
   frontend-build:
     name: Frontend Build & TypeScript Check
