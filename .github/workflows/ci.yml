@@ -10,6 +10,8 @@ jobs:
   backend-lint-and-test:
     name: Backend Lint & Pytest Suite
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,6 +83,8 @@ jobs:
     name: System & Queue Readiness Verification
     needs: [backend-lint-and-test, container-image-build]
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
