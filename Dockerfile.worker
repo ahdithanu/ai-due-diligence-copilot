@@ -21,7 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source code
 COPY backend /app/backend
 COPY api /app/api
-COPY storage /app/storage
 
 # Create storage upload directory
 RUN mkdir -p /app/storage/uploads

@@ -35,13 +35,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source code
 COPY backend /app/backend
 COPY api /app/api
-COPY storage /app/storage
-
-# Copy compiled frontend from Stage 1 into /app/frontend/dist
-COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 
 # Create storage upload directory
 RUN mkdir -p /app/storage/uploads
+
+# Copy compiled frontend from Stage 1 into /app/frontend/dist
+COPY --from=frontend-builder /frontend/dist /app/frontend/dist
 
 EXPOSE 8000
 
