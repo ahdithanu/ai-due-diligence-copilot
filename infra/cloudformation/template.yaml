@@ -1,0 +1,600 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Production Infrastructure for AI Due Diligence Copilot (ECS Fargate, RDS PostgreSQL, ALB, ECR, Secrets Manager)'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: 'production'
+    Description: 'Environment name for resource naming and tagging'
+
+  VpcCIDR:
+    Type: String
+    Default: '10.0.0.0/16'
+    Description: 'CIDR block for the dedicated VPC'
+
+  PublicSubnet1CIDR:
+    Type: String
+    Default: '10.0.1.0/24'
+
+  PublicSubnet2CIDR:
+    Type: String
+    Default: '10.0.2.0/24'
+
+  PrivateSubnet1CIDR:
+    Type: String
+    Default: '10.0.10.0/24'
+
+  PrivateSubnet2CIDR:
+    Type: String
+    Default: '10.0.11.0/24'
+
+  DBInstanceClass:
+    Type: String
+    Default: 'db.t4g.micro'
+    Description: 'Instance class for RDS PostgreSQL'
+
+  DBAllocatedStorage:
+    Type: Number
+    Default: 20
+    Description: 'Allocated storage for RDS in GB'
+
+  DBMasterUsername:
+    Type: String
+    Default: 'copilot_admin'
+    Description: 'Master username for RDS PostgreSQL'
+
+  DBMasterPassword:
+    Type: String
+    NoEcho: true
+    Description: 'Master password for RDS PostgreSQL (min 8 characters)'
+    MinLength: 8
+
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: 'Google Gemini API Key for synthesis and extraction nodes'
+
+  OpenAiApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: 'OpenAI API Key for fallback reasoning model routing'
+
+  ApiCpu:
+    Type: String
+    Default: '1024'
+    Description: 'CPU units for API container (1024 = 1 vCPU)'
+
+  ApiMemory:
+    Type: String
+    Default: '2048'
+    Description: 'Memory for API container in MB'
+
+  WorkerCpu:
+    Type: String
+    Default: '512'
+    Description: 'CPU units for Worker container (512 = 0.5 vCPU)'
+
+  WorkerMemory:
+    Type: String
+    Default: '1024'
+    Description: 'Memory for Worker container in MB'
+
+Resources:
+  # ==========================================
+  # 1. NETWORKING (VPC, Subnets, Gateway, Routes)
+  # ==========================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-diligence-vpc'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-diligence-igw'
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-subnet-1'
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-subnet-2'
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-private-subnet-1'
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-private-subnet-2'
+
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-diligence-nat'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-public-rt'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-private-rt'
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ==========================================
+  # 2. SECURITY GROUPS
+  # ==========================================
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow public HTTP/HTTPS traffic to Application Load Balancer'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-alb-sg'
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow inbound traffic from ALB only to ECS tasks'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-ecs-sg'
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Allow inbound PostgreSQL traffic from ECS containers'
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EcsSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-db-sg'
+
+  # ==========================================
+  # 3. SECRETS MANAGER
+  # ==========================================
+  AppSecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${EnvironmentName}/diligence-copilot/secrets'
+      Description: 'API keys and database credentials for AI Due Diligence Copilot'
+      SecretString: !Sub |
+        {
+          "GEMINI_API_KEY": "${GeminiApiKey}",
+          "OPENAI_API_KEY": "${OpenAiApiKey}",
+          "DATABASE_PASSWORD": "${DBMasterPassword}"
+        }
+
+  # ==========================================
+  # 4. DATABASE (RDS PostgreSQL Multi-AZ Ready)
+  # ==========================================
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'Subnets for PostgreSQL instance'
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-db-subnet-group'
+
+  PostgresDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub '${EnvironmentName}-diligence-postgres'
+      Engine: postgres
+      EngineVersion: '15.7'
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      DBName: 'diligence_db'
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      MultiAZ: false
+      PubliclyAccessible: false
+      StorageType: gp3
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-postgres'
+
+  # ==========================================
+  # 5. ECR REPOSITORIES
+  # ==========================================
+  ApiRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${EnvironmentName}-diligence-api'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  WorkerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${EnvironmentName}-diligence-worker'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  # ==========================================
+  # 6. IAM ROLES (ECS Execution & Task)
+  # ==========================================
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-ecs-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: AccessSecretsAndLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - kms:Decrypt
+                Resource: !Ref AppSecrets
+
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-ecs-task-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DiligenceCopilotTaskPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                  - secretsmanager:GetSecretValue
+                Resource: '*'
+
+  # ==========================================
+  # 7. LOG GROUPS
+  # ==========================================
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/${EnvironmentName}-diligence-api'
+      RetentionInDays: 30
+
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/ecs/${EnvironmentName}-diligence-worker'
+      RetentionInDays: 30
+
+  # ==========================================
+  # 8. ECS CLUSTER & TASK DEFINITIONS
+  # ==========================================
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub '${EnvironmentName}-diligence-cluster'
+
+  ApiTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: PostgresDB
+    Properties:
+      Family: !Sub '${EnvironmentName}-diligence-api'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref ApiCpu
+      Memory: !Ref ApiMemory
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: api
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApiRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8000
+              Protocol: tcp
+          Environment:
+            - Name: ENVIRONMENT
+              Value: !Ref EnvironmentName
+            - Name: DATABASE_URL
+              Value: !Sub 'postgresql+asyncpg://${DBMasterUsername}:${DBMasterPassword}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/diligence_db'
+            - Name: UPLOAD_DIR
+              Value: '/app/storage/uploads'
+          Secrets:
+            - Name: GEMINI_API_KEY
+              ValueFrom: !Sub '${AppSecrets}:GEMINI_API_KEY::'
+            - Name: OPENAI_API_KEY
+              ValueFrom: !Sub '${AppSecrets}:OPENAI_API_KEY::'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ApiLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: api
+          HealthCheck:
+            Command: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+            Interval: 15
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 10
+
+  WorkerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: PostgresDB
+    Properties:
+      Family: !Sub '${EnvironmentName}-diligence-worker'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: !Ref WorkerCpu
+      Memory: !Ref WorkerMemory
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt EcsTaskRole.Arn
+      ContainerDefinitions:
+        - Name: worker
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${WorkerRepository}:latest'
+          Essential: true
+          Environment:
+            - Name: ENVIRONMENT
+              Value: !Ref EnvironmentName
+            - Name: DATABASE_URL
+              Value: !Sub 'postgresql+asyncpg://${DBMasterUsername}:${DBMasterPassword}@${PostgresDB.Endpoint.Address}:${PostgresDB.Endpoint.Port}/diligence_db'
+            - Name: UPLOAD_DIR
+              Value: '/app/storage/uploads'
+          Secrets:
+            - Name: GEMINI_API_KEY
+              ValueFrom: !Sub '${AppSecrets}:GEMINI_API_KEY::'
+            - Name: OPENAI_API_KEY
+              ValueFrom: !Sub '${AppSecrets}:OPENAI_API_KEY::'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WorkerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: worker
+
+  # ==========================================
+  # 9. LOAD BALANCER & TARGET GROUP
+  # ==========================================
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-diligence-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-alb'
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-api-tg'
+      Port: 8000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 20
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+
+  AlbHttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref AlbTargetGroup
+
+  # ==========================================
+  # 10. ECS SERVICES (API & WORKER)
+  # ==========================================
+  ApiService:
+    Type: AWS::ECS::Service
+    DependsOn: AlbHttpListener
+    Properties:
+      ServiceName: !Sub '${EnvironmentName}-diligence-api'
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref ApiTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: false
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+          SecurityGroups:
+            - !Ref EcsSecurityGroup
+      LoadBalancers:
+        - ContainerName: api
+          ContainerPort: 8000
+          TargetGroupArn: !Ref AlbTargetGroup
+
+  WorkerService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub '${EnvironmentName}-diligence-worker'
+      Cluster: !Ref EcsCluster
+      TaskDefinition: !Ref WorkerTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: false
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+          SecurityGroups:
+            - !Ref EcsSecurityGroup
+
+Outputs:
+  LoadBalancerDNS:
+    Description: 'Public URL to access the AI Due Diligence Copilot'
+    Value: !Sub 'http://${ApplicationLoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${EnvironmentName}-LoadBalancerDNS'
+
+  ApiEcrRepositoryUri:
+    Description: 'ECR URI for the API container image'
+    Value: !GetAtt ApiRepository.RepositoryUri
+    Export:
+      Name: !Sub '${EnvironmentName}-ApiEcrRepositoryUri'
+
+  WorkerEcrRepositoryUri:
+    Description: 'ECR URI for the Worker container image'
+    Value: !GetAtt WorkerRepository.RepositoryUri
+    Export:
+      Name: !Sub '${EnvironmentName}-WorkerEcrRepositoryUri'
+
+  DatabaseEndpoint:
+    Description: 'Private endpoint address for RDS PostgreSQL'
+    Value: !GetAtt PostgresDB.Endpoint.Address
