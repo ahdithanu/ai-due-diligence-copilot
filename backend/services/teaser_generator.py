@@ -88,6 +88,8 @@ def generate_investment_teaser(state: DiligenceState) -> Dict[str, Any]:
 - **Target Returns**: Base case model projects **3.8x MOIC** and **28.5% IRR** over a 5-year investment horizon.
 """
 
+    risks_html = risks_md.replace('-', '&bull;').replace('\n', '<br>')
+
     teaser_html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -136,7 +138,7 @@ def generate_investment_teaser(state: DiligenceState) -> Dict[str, Any]:
     </table>
 
     <h2>3. Key Risks & Mitigations</h2>
-    <p>{risks_md.replace('-', '&bull;').replace('\n', '<br>')}</p>
+    <p>{risks_html}</p>
 
     <h2>4. Downside Waterfall & Exit Outlook</h2>
     <p>Preferred equity structure provides full 1x capital protection. Base case projections indicate <strong>3.8x MOIC</strong> over 5 years.</p>

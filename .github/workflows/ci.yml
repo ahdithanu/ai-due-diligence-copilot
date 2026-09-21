@@ -29,7 +29,7 @@ jobs:
 
       - name: Syntax & Lint check
         run: |
-          python -m py_compile backend/main.py backend/worker.py backend/services/queue_service.py
+          python -m compileall backend/ tests/
 
       - name: Run Pytest suite
         run: |
