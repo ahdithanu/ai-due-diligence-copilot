@@ -15,6 +15,8 @@ from backend.api.demo import router as demo_router
 from backend.api.institutional import router as institutional_router
 from backend.api.rag import router as rag_router
 from backend.api.security import router as security_router
+from backend.api.voice import router as voice_router
+from backend.api.salesforce import router as salesforce_router
 
 from os import path
 from fastapi.staticfiles import StaticFiles
@@ -55,6 +57,9 @@ app.include_router(demo_router, prefix=settings.API_V1_STR)
 app.include_router(institutional_router, prefix=settings.API_V1_STR)
 app.include_router(rag_router, prefix=settings.API_V1_STR)
 app.include_router(security_router, prefix=settings.API_V1_STR)
+app.include_router(voice_router, prefix=settings.API_V1_STR)
+app.include_router(salesforce_router, prefix=settings.API_V1_STR)
+
 
 # Mount frontend static assets if dist directory exists
 frontend_dist = path.abspath(path.join(path.dirname(__file__), "..", "frontend", "dist"))

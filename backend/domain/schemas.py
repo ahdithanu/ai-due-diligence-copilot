@@ -720,5 +720,97 @@ class TwoStageRAGResult(BaseModel):
     execution_time_ms: float
 
 
+# ==========================================
+# Real-Time Voice Streaming & Latency Schemas
+# ==========================================
+
+class VoiceTurnState(str, Enum):
+    LISTENING = "LISTENING"
+    USER_SPEAKING = "USER_SPEAKING"
+    PROCESSING_STT = "PROCESSING_STT"
+    THINKING_LLM = "THINKING_LLM"
+    STREAMING_TTS = "STREAMING_TTS"
+    INTERRUPTED = "INTERRUPTED"
+
+
+class VoiceLatencyBreakdown(BaseModel):
+    vad_latency_ms: float = 90.0
+    stt_latency_ms: float = 175.0
+    llm_ttft_ms: float = 160.0
+    tts_first_byte_ms: float = 135.0
+    network_buffer_ms: float = 60.0
+    total_e2e_latency_ms: float = 620.0
+    target_budget_ms: float = 700.0
+    is_within_budget: bool = True
+
+
+class VoiceStreamEvent(BaseModel):
+    event_type: str
+    session_id: str
+    state: VoiceTurnState
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    timestamp_ms: float
+
+
+class VoiceSimulateTurnRequest(BaseModel):
+    user_transcript: str
+    simulate_interruption: bool = False
+    interruption_at_ms: Optional[float] = 300.0
+
+
+class VoiceSimulateTurnResponse(BaseModel):
+    session_id: str
+    transcript: str
+    ai_response_text: str
+    audio_chunks_count: int
+    interrupted: bool
+    latency: VoiceLatencyBreakdown
+    timeline_events: List[str] = Field(default_factory=list)
+
+
+# ==========================================
+# Salesforce Agentforce & Data Cloud Schemas
+# ==========================================
+
+class SalesforceSyncDirection(str, Enum):
+    INBOUND_ZERO_COPY = "INBOUND_ZERO_COPY"
+    OUTBOUND_STAGE_UPDATE = "OUTBOUND_STAGE_UPDATE"
+    AGENTFORCE_ACTION = "AGENTFORCE_ACTION"
+
+
+class SalesforceOpportunity(BaseModel):
+    opp_id: str
+    account_name: str
+    stage_name: str
+    amount_usd: float
+    close_date: str
+    lead_partner: str
+    investment_id: Optional[str] = None
+    diligence_score: Optional[float] = None
+    data_room_url: Optional[str] = None
+
+
+class AgentforceActionRequest(BaseModel):
+    action_name: str
+    opportunity_id: str
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentforceActionResponse(BaseModel):
+    success: bool
+    action_name: str
+    output_parameters: Dict[str, Any]
+    chatter_post_created: bool
+    execution_time_ms: float
+
+
+class SalesforceDataCloudSyncResult(BaseModel):
+    records_ingested: int
+    zero_copy_tables: List[str]
+    sync_status: str
+    duration_ms: float
+
+
+
 
 
