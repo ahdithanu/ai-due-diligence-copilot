@@ -3,10 +3,57 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.database import get_db
-from backend.domain.schemas import RAGQueryRequest, RAGQueryResponse
+from backend.domain.schemas import (
+    RAGQueryRequest,
+    RAGQueryResponse,
+    TwoStageRAGRequest,
+    TwoStageRAGResult,
+    TenantContext,
+    UserRole
+)
 from backend.services.vector_rag_service import vector_rag_service
 
 router = APIRouter(prefix="/investments", tags=["Vector RAG"])
+
+
+@router.post("/{investment_id}/rag/two-stage-search", response_model=TwoStageRAGResult)
+async def two_stage_rag_search(
+    investment_id: str,
+    request: TwoStageRAGRequest
+) -> TwoStageRAGResult:
+    """
+    Executes an enterprise Two-Stage RAG retrieval:
+    1. Pre-retrieval Multi-Tenant Isolation and RBAC role clearance.
+    2. Stage 1 Broad Candidate Retrieval (candidate_k, default 20).
+    3. Stage 2 Reciprocal Rank Fusion (RRF) & Hierarchical Context Expansion.
+    4. Groundedness Gate & Hallucination Abstention.
+    """
+    try:
+        tenant_context = None
+        if request.org_id:
+            role = request.role or UserRole.DEAL_LEAD
+            tenant_context = TenantContext(
+                org_id=request.org_id,
+                org_name="Caller Org",
+                user_id="user_rag_caller",
+                user_email="caller@firm.com",
+                role=role
+            )
+
+        result = vector_rag_service.two_stage_rag_search(
+            investment_id=investment_id,
+            query=request.query,
+            tenant_context=tenant_context,
+            candidate_k=request.candidate_k,
+            final_top_k=request.final_top_k,
+            groundedness_threshold=request.groundedness_threshold
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to execute two-stage RAG search: {str(e)}"
+        )
 
 
 @router.post("/{investment_id}/rag/search", response_model=RAGQueryResponse)

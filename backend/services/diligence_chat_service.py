@@ -1,13 +1,33 @@
 import uuid
 from typing import List, Dict, Any, Tuple
-from backend.domain.schemas import DiligenceState, ChatMessage, DataRoomRequest, EvidenceRecord
+from backend.domain.schemas import DiligenceState, ChatMessage, DataRoomRequest, EvidenceRecord, UserIntent
+from backend.services.intent_router import intent_router_service, OUT_OF_SCOPE_RESPONSE, PROMPT_INJECTION_RESPONSE
 
 class DiligenceChatService:
     def process_query(self, state: DiligenceState, question: str) -> Tuple[ChatMessage, List[DataRoomRequest]]:
         """
         Processes user Q&A query against DiligenceState evidence records and financial metrics.
         Returns a ChatMessage (with grounded citations) and auto-generated DataRoomRequests.
+        Includes Layer 1/2 Ingress Guardrails & Intent Classifier short-circuiting.
         """
+        # Step 0: Ingress Guardrail & Intent Classification
+        classification = intent_router_service.classify_intent(question)
+        if not classification.is_in_scope:
+            if classification.intent == UserIntent.PROMPT_INJECTION:
+                msg = ChatMessage(
+                    role="assistant",
+                    content=PROMPT_INJECTION_RESPONSE,
+                    evidence_citations=[]
+                )
+                return msg, []
+            elif classification.intent == UserIntent.OUT_OF_SCOPE:
+                msg = ChatMessage(
+                    role="assistant",
+                    content=OUT_OF_SCOPE_RESPONSE,
+                    evidence_citations=[]
+                )
+                return msg, []
+
         question_lower = question.lower()
         matched_citations = []
         matching_evidence_text = []
@@ -126,3 +146,6 @@ class DiligenceChatService:
 def process_diligence_chat(state: DiligenceState, question: str) -> Tuple[ChatMessage, List[DataRoomRequest]]:
     service = DiligenceChatService()
     return service.process_query(state, question)
+
+diligence_chat_service = DiligenceChatService()
+

@@ -650,4 +650,75 @@ class SOC2Report(BaseModel):
     last_updated: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ==========================================
+# Agent Intent Routing & Guardrail Schemas
+# ==========================================
+
+class UserIntent(str, Enum):
+    DILIGENCE_QUERY = "DILIGENCE_QUERY"
+    FINANCIAL_DEEPDIVE = "FINANCIAL_DEEPDIVE"
+    CAP_TABLE_WATERFALL = "CAP_TABLE_WATERFALL"
+    DOCUMENT_REQUEST = "DOCUMENT_REQUEST"
+    OUT_OF_SCOPE = "OUT_OF_SCOPE"
+    PROMPT_INJECTION = "PROMPT_INJECTION"
+
+
+class IntentClassificationResult(BaseModel):
+    intent: UserIntent
+    confidence: float
+    is_in_scope: bool
+    explanation: str
+    suggested_action: str
+    target_node: Optional[str] = None
+
+
+class IngressGuardrailResult(BaseModel):
+    is_safe: bool
+    sanitized_query: str
+    blocked_reason: Optional[str] = None
+    flags: List[str] = Field(default_factory=list)
+
+
+# ==========================================
+# Two-Stage RAG & Hierarchical Chunking Schemas
+# ==========================================
+
+class RerankedChunkResult(BaseModel):
+    chunk_id: str
+    document_name: str
+    page_number: Optional[int] = None
+    section_title: Optional[str] = None
+    snippet: str
+    parent_context: Optional[str] = None
+    vector_score: float
+    keyword_score: float
+    hybrid_score: float
+    rerank_score: float
+    final_rank: int
+    confidence_pct: float
+    tenant_id: Optional[str] = None
+    allowed_roles: List[str] = Field(default_factory=list)
+
+
+class TwoStageRAGRequest(BaseModel):
+    query: str
+    candidate_k: int = 20
+    final_top_k: int = 5
+    groundedness_threshold: float = 0.45
+    org_id: Optional[str] = None
+    role: Optional[UserRole] = None
+
+
+class TwoStageRAGResult(BaseModel):
+    query: str
+    candidate_chunks_retrieved: int
+    reranked_chunks_returned: int
+    top_chunks: List[RerankedChunkResult]
+    groundedness_score: float
+    abstain_from_generation: bool
+    abstention_reason: Optional[str] = None
+    execution_time_ms: float
+
+
+
 
