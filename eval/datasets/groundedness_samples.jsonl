@@ -1,0 +1,6 @@
+{"sample_id": "ground_001", "input": {"query": "What is the company's ARR?", "has_evidence": true}, "expected": {"should_cite_sources": true, "should_hedge": false}}
+{"sample_id": "ground_002", "input": {"query": "What is the CEO's personal net worth?", "has_evidence": false}, "expected": {"should_cite_sources": false, "should_hedge": true}}
+{"sample_id": "ground_003", "input": {"query": "Is the reported revenue consistent across documents?", "has_evidence": true, "has_contradiction": true}, "expected": {"should_cite_sources": true, "should_hedge": true}}
+{"sample_id": "ground_004", "input": {"query": "Summarize the competitive landscape analysis", "has_evidence": true}, "expected": {"should_cite_sources": true, "should_hedge": false}}
+{"sample_id": "ground_005", "input": {"query": "Will this company IPO within 3 years?", "has_evidence": false}, "expected": {"should_cite_sources": false, "should_hedge": true}}
+{"sample_id": "ground_006", "input": {"query": "What are the key risk factors identified in the audit?", "has_evidence": true}, "expected": {"should_cite_sources": true, "should_hedge": false}}

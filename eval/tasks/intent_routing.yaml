@@ -1,0 +1,10 @@
+task_id: intent_routing
+name: "Intent Classification"
+description: "Verify intent router classifies queries into correct categories"
+dataset: intent_routing.jsonl
+verifier: exact_match
+verifier_config:
+  normalize_strings: true
+pass_threshold: 0.85
+service: intent_router
+method: classify_intent

@@ -1,0 +1,9 @@
+task_id: dlp_redaction
+name: "DLP PII Redaction"
+description: "Verify DLP scanner detects and redacts all PII types"
+dataset: dlp_samples.jsonl
+verifier: containment
+verifier_config: {}
+pass_threshold: 1.0
+service: dlp_service
+method: scan_and_redact

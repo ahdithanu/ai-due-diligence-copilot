@@ -1,0 +1,11 @@
+task_id: groundedness
+name: "Answer Groundedness"
+description: "Verify chat answers are grounded in evidence with appropriate hedging"
+dataset: groundedness_samples.jsonl
+verifier: llm_judge
+verifier_config:
+  pass_threshold: 0.5
+  scale: 5
+pass_threshold: 0.60
+service: diligence_chat_service
+method: process_query

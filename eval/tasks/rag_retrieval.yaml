@@ -1,0 +1,11 @@
+task_id: rag_retrieval
+name: "RAG Retrieval Quality"
+description: "Verify hybrid search returns relevant chunks for due diligence queries"
+dataset: golden_queries.jsonl
+verifier: retrieval_recall
+verifier_config:
+  k: 5
+  pass_threshold: 0.6
+pass_threshold: 0.70
+service: vector_rag_service
+method: hybrid_search

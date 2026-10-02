@@ -1,0 +1,15 @@
+{"sample_id": "intent_001", "input": {"query": "What is the company's annual recurring revenue growth rate?"}, "expected": {"intent": "FINANCIAL_DEEPDIVE"}}
+{"sample_id": "intent_002", "input": {"query": "Summarize the key risks in the data room documents"}, "expected": {"intent": "DILIGENCE_QUERY"}}
+{"sample_id": "intent_003", "input": {"query": "I need the SOC 2 audit report uploaded"}, "expected": {"intent": "DOCUMENT_REQUEST"}}
+{"sample_id": "intent_004", "input": {"query": "Who won the World Cup last year?"}, "expected": {"intent": "OUT_OF_SCOPE"}}
+{"sample_id": "intent_005", "input": {"query": "What's the weather in San Francisco right now?"}, "expected": {"intent": "OUT_OF_SCOPE"}}
+{"sample_id": "intent_006", "input": {"query": "Calculate the net revenue retention rate from the financial statements"}, "expected": {"intent": "FINANCIAL_DEEPDIVE"}}
+{"sample_id": "intent_007", "input": {"query": "What are the main competitive threats to this investment?"}, "expected": {"intent": "DILIGENCE_QUERY"}}
+{"sample_id": "intent_008", "input": {"query": "We need the audited financial statements for Q3 2024"}, "expected": {"intent": "DOCUMENT_REQUEST"}}
+{"sample_id": "intent_009", "input": {"query": "Tell me a joke about venture capital"}, "expected": {"intent": "OUT_OF_SCOPE"}}
+{"sample_id": "intent_010", "input": {"query": "What is the gross margin trend over the last 4 quarters?"}, "expected": {"intent": "FINANCIAL_DEEPDIVE"}}
+{"sample_id": "intent_011", "input": {"query": "How does the cap table look after the Series B?"}, "expected": {"intent": "CAP_TABLE_WATERFALL"}}
+{"sample_id": "intent_012", "input": {"query": "Assess the founder team's background and track record"}, "expected": {"intent": "DILIGENCE_QUERY"}}
+{"sample_id": "intent_013", "input": {"query": "Who is the president of the United States?"}, "expected": {"intent": "OUT_OF_SCOPE"}}
+{"sample_id": "intent_014", "input": {"query": "Upload the customer agreement and partnership contracts"}, "expected": {"intent": "DOCUMENT_REQUEST"}}
+{"sample_id": "intent_015", "input": {"query": "What is the customer acquisition cost payback period?"}, "expected": {"intent": "FINANCIAL_DEEPDIVE"}}

@@ -1,0 +1,10 @@
+{"sample_id": "rag_001", "input": {"query": "annual recurring revenue", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-1"]}}
+{"sample_id": "rag_002", "input": {"query": "customer churn rate and retention", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-2"]}}
+{"sample_id": "rag_003", "input": {"query": "cap table ownership structure", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-3"]}}
+{"sample_id": "rag_004", "input": {"query": "team background and leadership", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-4"]}}
+{"sample_id": "rag_005", "input": {"query": "total addressable market size", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-5"]}}
+{"sample_id": "rag_006", "input": {"query": "gross margin and unit economics", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-1"]}}
+{"sample_id": "rag_007", "input": {"query": "SOC 2 compliance and security audit", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-6"]}}
+{"sample_id": "rag_008", "input": {"query": "revenue growth trajectory year over year", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-1"]}}
+{"sample_id": "rag_009", "input": {"query": "Series B fundraising and dilution", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-3"]}}
+{"sample_id": "rag_010", "input": {"query": "net dollar retention and expansion revenue", "investment_id": "test-inv-1"}, "expected": {"relevant_chunk_ids": ["rag-chunk-2"]}}

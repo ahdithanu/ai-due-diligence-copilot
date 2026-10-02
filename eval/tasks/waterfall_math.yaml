@@ -1,0 +1,10 @@
+task_id: waterfall_math
+name: "Waterfall Math Verification"
+description: "Verify exit waterfall calculations are mathematically correct"
+dataset: waterfall_scenarios.jsonl
+verifier: exact_match
+verifier_config:
+  atol: 0.01
+pass_threshold: 1.0
+service: waterfall_calculator
+method: calculate_exit_waterfall

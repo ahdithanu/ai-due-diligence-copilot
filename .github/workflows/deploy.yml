@@ -1,0 +1,98 @@
+name: Deploy to AWS ECS
+
+on:
+  workflow_run:
+    workflows: ["AI Due Diligence Copilot CI"]
+    types: [completed]
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ENVIRONMENT: production
+  ECS_CLUSTER: production-diligence-cluster
+  API_SERVICE: production-diligence-api
+  WORKER_SERVICE: production-diligence-worker
+
+jobs:
+  deploy:
+    name: Build, Push & Deploy to ECS Fargate
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push API image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --platform linux/amd64 -f Dockerfile.api \
+            -t $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-api:$IMAGE_TAG \
+            -t $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-api:latest .
+          docker push $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-api:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-api:latest
+
+      - name: Build & push Worker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --platform linux/amd64 -f Dockerfile.worker \
+            -t $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-worker:$IMAGE_TAG \
+            -t $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-worker:latest .
+          docker push $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-worker:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.ENVIRONMENT }}-diligence-worker:latest
+
+      - name: Force ECS service redeployment
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.API_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.WORKER_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for API service stability
+        run: |
+          echo "Waiting for API service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.API_SERVICE }} \
+            --region ${{ env.AWS_REGION }} || true
+
+      - name: Verify deployment health
+        run: |
+          ALB_DNS=$(aws cloudformation describe-stacks \
+            --stack-name diligence-copilot-prod \
+            --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" \
+            --output text --region ${{ env.AWS_REGION }})
+          echo "🌐 Live URL: $ALB_DNS"
+          # Health check with retry
+          for i in 1 2 3 4 5; do
+            if curl -sf "$ALB_DNS/health" >/dev/null 2>&1; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "  Attempt $i/5 - waiting 30s..."
+            sleep 30
+          done
+          echo "⚠️ Health check didn't pass within 150s (ECS may still be rolling out)"
