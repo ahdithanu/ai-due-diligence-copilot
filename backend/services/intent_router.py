@@ -30,14 +30,29 @@ class IntentRouterService:
     """
 
     INJECTION_PATTERNS = [
+        # Original patterns
         r"(ignore|disregard|forget|override)\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts|rules|directives)",
         r"system\s*prompt\s*override",
         r"system:\s*(bypass|disregard|override)",
-        r"(you\s+are\s+now\s+a\s+|enable\s+)(dan|developer|jailbroken|unrestricted)",
+        r"(you\s+are\s+now\s+(a\s+)?|enable\s+)(dan|developer|jailbroken|unrestricted)",
         r"(developer|dan|jailbreak)\s+mode",
         r"reveal\s+(your|the)\s+(system|secret)\s+(prompt|instructions|keys)",
         r"base64\s*decode.*bypass",
-        r"roleplay\s+as\s+an\s+unconstrained"
+        r"roleplay\s+as\s+an\s+unconstrained",
+        # New: indirect instruction override ("ignore your instructions")
+        r"(ignore|disregard|override|bypass)\s+(your|my|the|all)\s+(instructions|rules|guidelines|safety|filters|restrictions|constraints)",
+        # New: forget-everything attacks ("forget everything above")
+        r"(forget|disregard|ignore)\s+(everything|all|anything)\s+(above|before|prior|previously)",
+        # New: pretend/roleplay/game attacks
+        r"(pretend|act\s+like|imagine|roleplay|role-play)\s+.{0,30}(no\s+rules|unrestricted|no\s+restrictions|no\s+limits|no\s+guidelines)",
+        r"(play\s+a\s+game|let.s\s+play)\s+.{0,40}(no\s+rules|pretend|anything|no\s+restrictions)",
+        # New: SUDO/admin escalation
+        r"(sudo|admin|root|superuser)\s+(override|mode|access|bypass|escalat)",
+        # New: "new instructions" override
+        r"new\s+(instructions|rules|directives|prompt)\s*:",
+        # New: explicit unrestricted/no-rules declarations
+        r"(completely|totally|absolutely|fully)\s+(unrestricted|unfiltered|uncensored|unblocked)",
+        r"(no\s+rules|without\s+rules|without\s+restrictions|without\s+limits)\s+(and|or|you|apply|can|say|do)",
     ]
 
     OUT_OF_SCOPE_PATTERNS = [
@@ -56,7 +71,8 @@ class IntentRouterService:
     FINANCIAL_DEEPDIVE_PATTERNS = [
         r"\b(arr|mrr|ebitda|gross\s+margin|operating\s+margin|cash\s+flow|burn\s+rate|runway)\b",
         r"\b(ltv|cac|payback|nrr|net\s+revenue\s+retention|churn|retention|cagr)\b",
-        r"\b(dscr|walt|rent\s+roll|occupancy|sqft|price\s+per\s+sf|cam\s+reconciliation)\b"
+        r"\b(dscr|walt|rent\s+roll|occupancy|sqft|price\s+per\s+sf|cam\s+reconciliation)\b",
+        r"\b(annual\s+recurring\s+revenue|revenue\s+growth|gross\s+margin\s+trend|unit\s+economics)\b",
     ]
 
     CAP_TABLE_PATTERNS = [
@@ -65,9 +81,10 @@ class IntentRouterService:
     ]
 
     DOCUMENT_REQUEST_PATTERNS = [
-        r"\b(data\s*room|document\s+needed|request\s+document|missing\s+audit|qofe|offering\s+memo)\b",
+        r"\b(document\s+needed|request\s+document|missing\s+audit|qofe|offering\s+memo)\b",
         r"\b(due\s+diligence\s+checklist|audit\s+request|p&l\s+request)\b",
-        r"\b(request|require|need|upload|missing)\b.*(financial|statement|audit|soc\s*2|report|document|agreement)"
+        r"\b(request|require|need|upload|missing)\b.*(financial|statement|audit|soc\s*2|report|document|agreement)",
+        r"\b(request|require|need|upload|missing|send|provide)\b.*(data\s*room)\b",
     ]
 
     def validate_ingress_guardrails(self, query: str) -> IngressGuardrailResult:

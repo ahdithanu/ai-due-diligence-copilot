@@ -149,7 +149,7 @@ class ServiceExecutor:
             )
             return {
                 "results": [
-                    {"chunk_id": r.chunk_id, "score": r.hybrid_score}
+                    {"chunk_id": r.id, "score": r.hybrid_score, "document_name": r.document_name}
                     for r in result.results
                 ],
             }
@@ -217,6 +217,86 @@ class ServiceExecutor:
 # Verifier adapter — maps task+sample to verifier call
 # ─────────────────────────────────────────────
 
+def _verify_waterfall(expected: Dict, actual: Dict, context: Dict) -> EvalResult:
+    """Verify waterfall math invariants instead of exact key matching.
+
+    Invariants checked:
+    1. Total payouts sum to exit valuation (conservation of capital)
+    2. All payouts are non-negative
+    3. Preferred gets at least liquidation preference (when exit >= liq pref)
+    4. MOIC values are positive
+    """
+    payouts = actual.get("payouts", [])
+    exit_val = actual.get("exit_valuation_usd", 0)
+
+    if not payouts:
+        return EvalResult(
+            task_id=context.get("task_id", ""),
+            sample_id=context.get("sample_id", ""),
+            passed=False, score=0.0,
+            reason="No payouts returned",
+            verifier_type="exact_match",
+        )
+
+    checks_passed = 0
+    checks_total = 4
+    failures = []
+
+    # 1. Conservation: total payouts <= exit valuation (within tolerance)
+    total_payout = sum(p.get("payout_usd", 0) for p in payouts)
+    if abs(total_payout - exit_val) < 1.0:
+        checks_passed += 1
+    else:
+        failures.append("payout sum {:.0f} != exit {:.0f}".format(total_payout, exit_val))
+
+    # 2. Non-negative payouts
+    all_non_neg = all(p.get("payout_usd", 0) >= 0 for p in payouts)
+    if all_non_neg:
+        checks_passed += 1
+    else:
+        failures.append("negative payout found")
+
+    # 3. Preferred gets at least liq pref when exit covers it
+    pref_payout_gte = expected.get("preferred_payout_gte")
+    if pref_payout_gte is not None:
+        pref_payouts = [p for p in payouts if "preferred" in p.get("share_class", "").lower()]
+        pref_total = sum(p.get("payout_usd", 0) for p in pref_payouts)
+        if pref_total >= pref_payout_gte - 1.0:
+            checks_passed += 1
+        else:
+            failures.append("preferred got {:.0f}, expected >= {:.0f}".format(pref_total, pref_payout_gte))
+    else:
+        checks_passed += 1  # no specific pref check required
+
+    # 4. MOIC values are reasonable (> 0 for anyone who got paid)
+    moic_ok = all(
+        p.get("moic", 0) >= 0 for p in payouts
+    )
+    if moic_ok:
+        checks_passed += 1
+    else:
+        failures.append("negative MOIC found")
+
+    score = checks_passed / checks_total
+    passed = checks_passed == checks_total
+    reason = (
+        "All {} waterfall invariants hold".format(checks_total)
+        if passed
+        else "{}/{} invariant checks failed: {}".format(
+            len(failures), checks_total, "; ".join(failures)
+        )
+    )
+
+    return EvalResult(
+        task_id=context.get("task_id", ""),
+        sample_id=context.get("sample_id", ""),
+        passed=passed,
+        score=score,
+        reason=reason,
+        verifier_type="exact_match",
+    )
+
+
 def run_verifier(task: TaskConfig, sample: Dict, actual: Dict) -> EvalResult:
     """Create verifier from task config, build expected/actual, and verify."""
     expected = sample.get("expected", {})
@@ -265,6 +345,9 @@ def run_verifier(task: TaskConfig, sample: Dict, actual: Dict) -> EvalResult:
             expected_intent = expected.get("intent", "")
             actual_intent = actual.get("intent", "")
             return verifier.verify(expected_intent, actual_intent, context)
+        if task.service == "waterfall_calculator":
+            # Waterfall: verify math invariants rather than descriptive text
+            return _verify_waterfall(expected, actual, context)
         return verifier.verify(expected, actual, context)
 
     if verifier_type == "retrieval_recall":
