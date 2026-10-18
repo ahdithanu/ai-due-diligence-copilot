@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-due-diligence-copilot
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: ENVIRONMENT
+        value: production
+      - key: PROJECT_NAME
+        value: AI Investment Due Diligence Copilot
