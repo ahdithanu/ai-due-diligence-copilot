@@ -22,6 +22,8 @@ import { LLMProviderSwitcher } from './components/LLMProviderSwitcher';
 import { DataRoomUploader } from './components/DataRoomUploader';
 import { DiligenceChecklistView } from './components/DiligenceChecklistView';
 import { ValuationCompsView } from './components/ValuationCompsView';
+import { RemediationCovenantsView } from './components/RemediationCovenantsView';
+import { ExternalIntelligenceView } from './components/ExternalIntelligenceView';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -37,7 +39,7 @@ export const App: React.FC = () => {
 
   // Top Level Navigation Tab
   const [mainNavTab, setMainNavTab] = useState<
-    'workspaces' | 'checklist' | 'valuation_comps' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
+    'workspaces' | 'checklist' | 'valuation_comps' | 'remediation' | 'external_intel' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
   >('workspaces');
 
 
@@ -409,6 +411,26 @@ export const App: React.FC = () => {
                 <span>🏟️</span> Valuation &amp; Comps
               </button>
               <button
+                onClick={() => setMainNavTab('remediation')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'remediation'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>🛡️</span> Covenants &amp; 100-Day Plan
+              </button>
+              <button
+                onClick={() => setMainNavTab('external_intel')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'external_intel'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>🌐</span> Market &amp; Team Intel
+              </button>
+              <button
                 onClick={() => setMainNavTab('cap_table')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   mainNavTab === 'cap_table'
@@ -549,6 +571,16 @@ export const App: React.FC = () => {
           />
         ) : mainNavTab === 'valuation_comps' ? (
           <ValuationCompsView
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+            companyName={diligenceState?.company_name || 'Acme SaaS AI'}
+          />
+        ) : mainNavTab === 'remediation' ? (
+          <RemediationCovenantsView
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+            companyName={diligenceState?.company_name || 'Acme SaaS AI'}
+          />
+        ) : mainNavTab === 'external_intel' ? (
+          <ExternalIntelligenceView
             investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
             companyName={diligenceState?.company_name || 'Acme SaaS AI'}
           />

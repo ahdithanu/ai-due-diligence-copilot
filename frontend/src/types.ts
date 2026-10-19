@@ -719,4 +719,105 @@ export interface ValuationCompsResponse {
   peer_median_rule_of_40_pct: number;
 }
 
+// Red-Flag Remediation & Covenants Types
+export type ConditionPrecedentStatus = 'SATISFIED' | 'PENDING_TARGET_ACTION' | 'WAIVED';
+
+export interface ConditionPrecedent {
+  id: string;
+  category: string;
+  condition_text: string;
+  status: ConditionPrecedentStatus;
+  responsible_party: string;
+  target_deadline: string;
+  risk_mitigated: string;
+}
+
+export interface EscrowHoldback {
+  id: string;
+  title: string;
+  holdback_amount_usd: number;
+  holdback_pct: number;
+  survival_period_months: number;
+  trigger_event: string;
+  release_conditions: string;
+}
+
+export interface GovernanceCovenant {
+  id: string;
+  covenant_type: string;
+  clause_title: string;
+  description: string;
+  threshold_usd?: number;
+}
+
+export interface ValueCreationMilestone {
+  id: string;
+  day_range: 'DAYS_1_30' | 'DAYS_31_60' | 'DAYS_61_100' | string;
+  workstream: string;
+  milestone_title: string;
+  target_kpi_impact: string;
+  owner: string;
+  status: 'PLANNED' | 'IN_PROGRESS' | 'ACHIEVED' | string;
+}
+
+export interface RemediationPlanResponse {
+  investment_id: string;
+  company_name: string;
+  total_escrow_holdback_usd: number;
+  conditions_precedent: ConditionPrecedent[];
+  escrows: EscrowHoldback[];
+  covenants: GovernanceCovenant[];
+  value_creation_plan: ValueCreationMilestone[];
+}
+
+// External Intelligence Feed Types
+export interface FundingRoundHistory {
+  round_name: string;
+  date: string;
+  amount_raised_usd: number;
+  post_money_valuation_usd: number;
+  lead_investors: string[];
+  dilution_pct: number;
+}
+
+export interface MarketCompetitorIntel {
+  name: string;
+  headquarters: string;
+  total_raised_usd: number;
+  last_round: string;
+  estimated_arr_usd: number;
+  growth_momentum: 'HIGH' | 'MODERATE' | 'STEADY' | string;
+  key_differentiator: string;
+}
+
+export interface ExecutiveProfile {
+  name: string;
+  title: string;
+  tenure_years: number;
+  prior_pedigree: string;
+  equity_ownership_pct: number;
+  flight_risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | string;
+  status_notes: string;
+}
+
+export interface OrganizationalHealthMetrics {
+  glassdoor_rating: number;
+  headcount_total: number;
+  yoy_headcount_growth_pct: number;
+  annual_regretted_attrition_pct: number;
+  engineering_velocity_score: number;
+  retention_health: string;
+}
+
+export interface ExternalIntelligenceResponse {
+  investment_id: string;
+  company_name: string;
+  funding_history: FundingRoundHistory[];
+  competitors: MarketCompetitorIntel[];
+  executive_team: ExecutiveProfile[];
+  org_health: OrganizationalHealthMetrics;
+  data_source: string;
+}
+
+
 

@@ -919,3 +919,119 @@ class ValuationCompsResponse(BaseModel):
     precedent_deals: List[PrecedentTransactionComp]
     target_rule_of_40_pct: float
     peer_median_rule_of_40_pct: float
+
+
+# Red-Flag Remediation, Covenants & 100-Day Plan Schemas
+class ConditionPrecedentStatus(str, Enum):
+    SATISFIED = "SATISFIED"
+    PENDING_TARGET_ACTION = "PENDING_TARGET_ACTION"
+    WAIVED = "WAIVED"
+
+
+class ConditionPrecedent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    category: str  # LEGAL, FINANCIAL, TECH, TAX
+    condition_text: str
+    status: ConditionPrecedentStatus = ConditionPrecedentStatus.PENDING_TARGET_ACTION
+    responsible_party: str = "Target Founders"
+    target_deadline: str = "Prior to Signing / Closing"
+    risk_mitigated: str
+
+
+class EscrowHoldback(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    holdback_amount_usd: float
+    holdback_pct: float
+    survival_period_months: int
+    trigger_event: str
+    release_conditions: str
+
+
+class GovernanceCovenant(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    covenant_type: str  # AFFIRMATIVE, NEGATIVE, BOARD_GOVERNANCE
+    clause_title: str
+    description: str
+    threshold_usd: Optional[float] = None
+
+
+class ValueCreationMilestone(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    day_range: str  # DAYS_1_30, DAYS_31_60, DAYS_61_100
+    workstream: str  # FINANCE_OPS, GTM_EXPANSION, TECH_ARCH, TALENT_HR
+    milestone_title: str
+    target_kpi_impact: str
+    owner: str = "Operating Partner"
+    status: str = "PLANNED"  # PLANNED, IN_PROGRESS, ACHIEVED
+
+
+class RemediationPlanResponse(BaseModel):
+    investment_id: str
+    company_name: str
+    total_escrow_holdback_usd: float
+    conditions_precedent: List[ConditionPrecedent]
+    escrows: List[EscrowHoldback]
+    covenants: List[GovernanceCovenant]
+    value_creation_plan: List[ValueCreationMilestone]
+
+
+class UpdateConditionRequest(BaseModel):
+    status: ConditionPrecedentStatus
+
+
+class CreateMilestoneRequest(BaseModel):
+    day_range: str
+    workstream: str
+    milestone_title: str
+    target_kpi_impact: str
+    owner: str = "Operating Partner"
+
+
+# External Market & Executive Intelligence Schemas
+class FundingRoundHistory(BaseModel):
+    round_name: str
+    date: str
+    amount_raised_usd: float
+    post_money_valuation_usd: float
+    lead_investors: List[str]
+    dilution_pct: float
+
+
+class MarketCompetitorIntel(BaseModel):
+    name: str
+    headquarters: str
+    total_raised_usd: float
+    last_round: str
+    estimated_arr_usd: float
+    growth_momentum: str  # HIGH, MODERATE, STEADY
+    key_differentiator: str
+
+
+class ExecutiveProfile(BaseModel):
+    name: str
+    title: str
+    tenure_years: float
+    prior_pedigree: str
+    equity_ownership_pct: float
+    flight_risk_level: str  # LOW, MEDIUM, HIGH
+    status_notes: str
+
+
+class OrganizationalHealthMetrics(BaseModel):
+    glassdoor_rating: float
+    headcount_total: int
+    yoy_headcount_growth_pct: float
+    annual_regretted_attrition_pct: float
+    engineering_velocity_score: float
+    retention_health: str
+
+
+class ExternalIntelligenceResponse(BaseModel):
+    investment_id: str
+    company_name: str
+    funding_history: List[FundingRoundHistory]
+    competitors: List[MarketCompetitorIntel]
+    executive_team: List[ExecutiveProfile]
+    org_health: OrganizationalHealthMetrics
+    data_source: str = "PitchBook & Crunchbase Enterprise Feeds"

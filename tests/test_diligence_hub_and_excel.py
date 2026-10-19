@@ -159,3 +159,45 @@ def test_diligence_hub_api_endpoints():
     assert excel_resp.status_code == 200
     assert "openxmlformats" in excel_resp.headers["content-type"]
     assert excel_resp.content.startswith(b"PK\x03\x04")
+
+    # GET Remediation Plan
+    rem_resp = client.get(f"/api/v1/investments/{inv_id}/remediation-plan?company_name=TestCo&valuation=50000000")
+    assert rem_resp.status_code == 200
+    rem_data = rem_resp.json()
+    assert rem_data["total_escrow_holdback_usd"] == 5_000_000.0
+    assert len(rem_data["conditions_precedent"]) >= 5
+    assert len(rem_data["covenants"]) >= 4
+    assert len(rem_data["value_creation_plan"]) >= 6
+
+    # PATCH Condition Precedent
+    cp_id = rem_data["conditions_precedent"][0]["id"]
+    patch_cp = client.patch(
+        f"/api/v1/investments/{inv_id}/remediation-plan/conditions/{cp_id}",
+        json={"status": "SATISFIED"},
+    )
+    assert patch_cp.status_code == 200
+    assert patch_cp.json()["status"] == "SATISFIED"
+
+    # POST Value Creation Milestone
+    post_m = client.post(
+        f"/api/v1/investments/{inv_id}/remediation-plan/milestones",
+        json={
+            "day_range": "DAYS_1_30",
+            "workstream": "FINANCE_OPS",
+            "milestone_title": "Implement Continuous Cash Flow Forecasting",
+            "target_kpi_impact": "Weekly burn visibility; reduce working capital cycle by 14 days.",
+            "owner": "FP&A Lead",
+        },
+    )
+    assert post_m.status_code == 200
+    assert post_m.json()["milestone_title"] == "Implement Continuous Cash Flow Forecasting"
+
+    # GET External Intelligence
+    intel_resp = client.get(f"/api/v1/investments/{inv_id}/external-intel?company_name=TestCo")
+    assert intel_resp.status_code == 200
+    intel_data = intel_resp.json()
+    assert len(intel_data["funding_history"]) >= 3
+    assert len(intel_data["competitors"]) >= 3
+    assert len(intel_data["executive_team"]) >= 4
+    assert intel_data["org_health"]["glassdoor_rating"] == 4.4
+
