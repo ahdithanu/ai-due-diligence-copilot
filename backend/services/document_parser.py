@@ -1,6 +1,9 @@
 import os
 import re
 import uuid
+import csv
+import zipfile
+import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Tuple
 from pypdf import PdfReader
 from backend.domain.schemas import DocumentChunk
@@ -14,6 +17,10 @@ class DocumentParserService:
         ext = os.path.splitext(file_path)[1].lower()
         if ext == ".pdf":
             return self._parse_pdf(file_path, document_id)
+        elif ext in (".csv", ".tsv"):
+            return self._parse_csv(file_path, document_id, delimiter="\t" if ext == ".tsv" else ",")
+        elif ext in (".xlsx", ".xlsm"):
+            return self._parse_xlsx(file_path, document_id)
         else:
             return self._parse_text(file_path, document_id)
 
@@ -69,6 +76,114 @@ class DocumentParserService:
             chunks.append(chunk)
 
         return chunks
+
+    def _parse_csv(self, file_path: str, document_id: str, delimiter: str = ",") -> List[DocumentChunk]:
+        chunks: List[DocumentChunk] = []
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                reader = csv.reader(f, delimiter=delimiter)
+                rows = [r for r in reader if any(cell.strip() for cell in r)]
+
+            if not rows:
+                return chunks
+
+            header = rows[0]
+            batch_size = 25
+            global_idx = 0
+            for i in range(1, max(len(rows), 2), batch_size):
+                batch = rows[i:i + batch_size] if len(rows) > 1 else []
+                table_lines = [" | ".join(header), " | ".join(["---"] * max(len(header), 1))]
+                for row in batch:
+                    padded = row + [""] * max(0, len(header) - len(row))
+                    table_lines.append(" | ".join(padded[:len(header)]))
+
+                content = "\n".join(table_lines)
+                end_row = min(i + batch_size - 1, len(rows) - 1)
+                section_title = f"Spreadsheet Data (Rows {i}-{end_row})" if end_row >= i else "Header Schema"
+                chunk = DocumentChunk(
+                    id=str(uuid.uuid4()),
+                    document_id=document_id,
+                    chunk_index=global_idx,
+                    content=content,
+                    page_number=1,
+                    section_title=section_title,
+                    char_count=len(content)
+                )
+                chunks.append(chunk)
+                global_idx += 1
+        except Exception:
+            return self._parse_text(file_path, document_id)
+
+        return chunks
+
+    def _parse_xlsx(self, file_path: str, document_id: str) -> List[DocumentChunk]:
+        chunks: List[DocumentChunk] = []
+        try:
+            with zipfile.ZipFile(file_path, "r") as z:
+                # 1. Read shared strings if present
+                shared_strings: List[str] = []
+                if "xl/sharedStrings.xml" in z.namelist():
+                    tree = ET.fromstring(z.read("xl/sharedStrings.xml"))
+                    for si in tree.findall(".//{*}si"):
+                        t_elems = si.findall(".//{*}t")
+                        shared_strings.append("".join(t.text or "" for t in t_elems))
+
+                # 2. Iterate worksheets
+                sheet_names = [n for n in z.namelist() if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")]
+                sheet_names.sort()
+
+                global_idx = 0
+                for sheet_idx, sheet_name in enumerate(sheet_names):
+                    sheet_tree = ET.fromstring(z.read(sheet_name))
+                    rows_data: List[List[str]] = []
+
+                    for row in sheet_tree.findall(".//{*}row"):
+                        row_cells: List[str] = []
+                        for cell in row.findall("{*}c"):
+                            cell_type = cell.attrib.get("t")
+                            v_elem = cell.find("{*}v")
+                            val = ""
+                            if v_elem is not None and v_elem.text is not None:
+                                raw_v = v_elem.text
+                                if cell_type == "s" and raw_v.isdigit():
+                                    s_idx = int(raw_v)
+                                    val = shared_strings[s_idx] if s_idx < len(shared_strings) else raw_v
+                                else:
+                                    val = raw_v
+                            row_cells.append(val.strip())
+                        if any(c for c in row_cells):
+                            rows_data.append(row_cells)
+
+                    if not rows_data:
+                        continue
+
+                    header = rows_data[0]
+                    batch_size = 25
+                    for b_start in range(1, max(len(rows_data), 2), batch_size):
+                        batch = rows_data[b_start:b_start + batch_size] if len(rows_data) > 1 else []
+                        header_line = " | ".join(header)
+                        sep_line = " | ".join(["---"] * max(len(header), 1))
+                        lines = [f"### Sheet {sheet_idx + 1} Tabular Model", header_line, sep_line]
+                        for r in batch:
+                            padded = r + [""] * max(0, len(header) - len(r))
+                            lines.append(" | ".join(padded[:len(header)]))
+
+                        content = "\n".join(lines)
+                        chunk = DocumentChunk(
+                            id=str(uuid.uuid4()),
+                            document_id=document_id,
+                            chunk_index=global_idx,
+                            content=content,
+                            page_number=sheet_idx + 1,
+                            section_title=f"Financial Model Sheet {sheet_idx + 1}",
+                            char_count=len(content)
+                        )
+                        chunks.append(chunk)
+                        global_idx += 1
+        except Exception:
+            return self._parse_text(file_path, document_id)
+
+        return chunks if chunks else self._parse_text(file_path, document_id)
 
     def _chunk_text(self, text: str) -> List[str]:
         if len(text) <= self.chunk_size:

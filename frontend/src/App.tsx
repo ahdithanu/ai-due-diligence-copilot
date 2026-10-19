@@ -18,6 +18,8 @@ import { ICAudioDebateView } from './components/ICAudioDebateView';
 import { LPTeaserView } from './components/LPTeaserView';
 import { VectorRAGExplorer } from './components/VectorRAGExplorer';
 import { EnterpriseSecurityView } from './components/EnterpriseSecurityView';
+import { LLMProviderSwitcher } from './components/LLMProviderSwitcher';
+import { DataRoomUploader } from './components/DataRoomUploader';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -38,7 +40,7 @@ export const App: React.FC = () => {
 
 
   // Sub tab within workspace view
-  const [activeTab, setActiveTab] = useState<'graph' | 'evidence' | 'financials' | 'ic_debate' | 'memo'>('graph');
+  const [activeTab, setActiveTab] = useState<'graph' | 'evidence' | 'financials' | 'ic_debate' | 'memo' | 'uploader'>('graph');
 
   // Fetch deployments list
   const fetchDeployments = async () => {
@@ -497,20 +499,23 @@ export const App: React.FC = () => {
             </nav>
           </div>
 
-          {selectedInvestmentId && diligenceState && mainNavTab === 'workspaces' && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSelectedInvestmentId(null)}
-                className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 transition-colors"
-              >
-                &larr; Back to Dashboard
-              </button>
-              <div className="text-xs border-l border-slate-800 pl-4 flex items-center gap-2">
-                <span className="font-bold text-white">{diligenceState.company_name}</span>
-                <span className="text-slate-400 font-mono">({diligenceState.industry})</span>
+          <div className="flex items-center gap-3">
+            <LLMProviderSwitcher />
+            {selectedInvestmentId && diligenceState && mainNavTab === 'workspaces' && (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSelectedInvestmentId(null)}
+                  className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 transition-colors"
+                >
+                  &larr; Back to Dashboard
+                </button>
+                <div className="text-xs border-l border-slate-800 pl-4 flex items-center gap-2">
+                  <span className="font-bold text-white">{diligenceState.company_name}</span>
+                  <span className="text-slate-400 font-mono">({diligenceState.industry})</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
@@ -568,6 +573,14 @@ export const App: React.FC = () => {
                 🕸️ Graph Engine Visualizer
               </button>
               <button
+                onClick={() => setActiveTab('uploader')}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeTab === 'uploader' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                📥 Data Room Ingestion
+              </button>
+              <button
                 onClick={() => setActiveTab('evidence')}
                 className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                   activeTab === 'evidence' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -617,6 +630,14 @@ export const App: React.FC = () => {
                 onResolveConflict={handleResolveConflict}
                 checkpoints={checkpoints}
                 running={graphRunning}
+              />
+            )}
+
+            {activeTab === 'uploader' && selectedInvestmentId && (
+              <DataRoomUploader
+                investmentId={selectedInvestmentId}
+                companyName={diligenceState.company_name}
+                onUploadSuccess={() => fetchDiligenceState(selectedInvestmentId)}
               />
             )}
 

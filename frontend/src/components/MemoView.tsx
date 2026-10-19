@@ -73,6 +73,17 @@ export const MemoView: React.FC<MemoViewProps> = ({ state, evidenceRecords }) =>
     document.body.removeChild(link);
   };
 
+  const handleDownloadICPack = (format: 'pdf' | 'markdown' = 'pdf') => {
+    if (!state.investment_id) return;
+    const url = `/api/v1/investments/${state.investment_id}/ic-pack/download?format=${format}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Memo Top Header */}
@@ -91,11 +102,18 @@ export const MemoView: React.FC<MemoViewProps> = ({ state, evidenceRecords }) =>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
+            onClick={() => handleDownloadICPack('pdf')}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all transform hover:scale-105 flex items-center gap-1.5"
+          >
+            <span>📑</span> Download Complete IC Pack (PDF)
+          </button>
+
+          <button
             onClick={() => handleDownload('pdf')}
             disabled={!state.memo_markdown}
             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5"
           >
-            <span>📥</span> Download PDF
+            <span>📥</span> Memo PDF
           </button>
 
           <button

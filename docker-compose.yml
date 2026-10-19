@@ -25,7 +25,10 @@ services:
     container_name: diligence_api
     environment:
       DATABASE_URL: sqlite+aiosqlite:///./storage/diligence_copilot.db
-      LLM_PROVIDER: mock
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       UPLOAD_DIR: ./storage/uploads
     ports:
       - "8000:8000"
@@ -47,7 +50,10 @@ services:
     container_name: diligence_worker
     environment:
       DATABASE_URL: sqlite+aiosqlite:///./storage/diligence_copilot.db
-      LLM_PROVIDER: mock
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       UPLOAD_DIR: ./storage/uploads
     depends_on:
       api:

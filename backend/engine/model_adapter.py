@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Type, TypeVar, Union, Dict, Any, List
+import os
 import json
 import httpx
 import asyncio
@@ -573,7 +574,7 @@ def get_model_adapter(
     Returns GeminiModelAdapter for "gemini", OpenAIModelAdapter for "openai",
     and MockModelAdapter for "mock" or when no API key is set.
     """
-    if routed or task_type is not None or routing_policy is not None:
+    if routed or task_type is not None or routing_policy is not None or (provider and provider.lower() in ("routed", "router")):
         return RoutedModelAdapter(
             task_type=task_type,
             routing_policy=routing_policy,
@@ -586,13 +587,18 @@ def get_model_adapter(
     p_norm = (eff_provider or "").lower().strip()
     key_norm = (eff_api_key or "").strip()
 
+    if p_norm == "routed" or p_norm == "router":
+        return RoutedModelAdapter(task_type=task_type, routing_policy=routing_policy, **kwargs)
+
     if p_norm == "gemini":
-        if not key_norm:
+        gemini_key = key_norm or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "").strip()
+        if not gemini_key:
             return MockModelAdapter(**kwargs)
-        return GeminiModelAdapter(api_key=key_norm, **kwargs)
+        return GeminiModelAdapter(api_key=gemini_key, **kwargs)
     elif p_norm == "openai":
-        if not key_norm:
+        openai_key = key_norm or settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "").strip()
+        if not openai_key:
             return MockModelAdapter(**kwargs)
-        return OpenAIModelAdapter(api_key=key_norm, **kwargs)
+        return OpenAIModelAdapter(api_key=openai_key, **kwargs)
     else:
         return MockModelAdapter(**kwargs)

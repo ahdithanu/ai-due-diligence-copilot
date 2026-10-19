@@ -20,8 +20,12 @@ from backend.domain.schemas import (
 
 from backend.services.document_parser import DocumentParserService
 from backend.services.evidence_extractor import EvidenceExtractorService
-from backend.services.memo_generator import generate_investment_memo_pdf, generate_investment_memo
+from backend.services.memo_generator import (
+    generate_investment_memo_pdf, generate_investment_memo,
+    generate_full_ic_pack_pdf, generate_full_ic_pack_markdown
+)
 from backend.services.benchmarking_service import generate_portfolio_comparison, detect_portfolio_red_flags
+from backend.services.vector_rag_service import vector_rag_service
 
 
 
@@ -174,6 +178,17 @@ async def upload_document(
             char_count=chunk.char_count
         )
         db.add(db_chunk)
+        # Auto-index into vector RAG store
+        vector_rag_service.index_chunk(
+            investment_id=investment_id,
+            document_name=filename,
+            snippet=chunk.content[:280],
+            page_number=chunk.page_number,
+            section_title=chunk.section_title or "Uploaded Section",
+            parent_context=chunk.content,
+            chunk_id=chunk.id,
+            metadata={"doc_type": doc_type, "file_size": file_size}
+        )
 
     for ev in evidence_records:
         db_ev = EvidenceRecordModel(
@@ -363,6 +378,50 @@ async def download_investment_memo(
             content=memo_text,
             media_type="text/markdown",
             headers={"Content-Disposition": f"attachment; filename={company_name}_Investment_Memo.md"}
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported format '{format}'. Supported formats are 'pdf' and 'markdown'.")
+
+
+@router.get("/{investment_id}/ic-pack/download")
+async def download_ic_pack(
+    investment_id: str,
+    format: str = "pdf",
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(InvestmentModel).where(InvestmentModel.id == investment_id))
+    inv = result.scalar_one_or_none()
+    if not inv:
+        raise HTTPException(status_code=404, detail="Investment workspace not found")
+
+    state = None
+    if inv.state_snapshot_json:
+        state = DiligenceState.model_validate(inv.state_snapshot_json)
+    else:
+        state = DiligenceState(
+            investment_id=inv.id,
+            company_name=inv.company_name,
+            industry=inv.industry,
+            target_round=inv.target_round,
+            check_size_usd=inv.check_size_usd
+        )
+
+    company_name = (inv.company_name or "Company").replace(" ", "_")
+    fmt = format.lower()
+
+    if fmt == "pdf":
+        pdf_bytes = generate_full_ic_pack_pdf(state)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={company_name}_Institutional_IC_Pack.pdf"}
+        )
+    elif fmt in ("markdown", "md"):
+        md_text = generate_full_ic_pack_markdown(state)
+        return Response(
+            content=md_text,
+            media_type="text/markdown",
+            headers={"Content-Disposition": f"attachment; filename={company_name}_Institutional_IC_Pack.md"}
         )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported format '{format}'. Supported formats are 'pdf' and 'markdown'.")

@@ -618,3 +618,20 @@ export interface SOC2Report {
   details?: Record<string, any>;
 }
 
+export interface LLMSettings {
+  current_provider: string;
+  available_providers: string[];
+  has_gemini_key: boolean;
+  has_openai_key: boolean;
+  active_model_name: string;
+  is_live_ready: boolean;
+}
+
+export interface DocumentUploadResponse {
+  document_id: string;
+  filename: string;
+  chunks_extracted: number;
+  evidence_extracted: number;
+  status: string;
+}
+
