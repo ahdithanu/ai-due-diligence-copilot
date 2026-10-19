@@ -44,3 +44,11 @@ Documented lessons from system development, bug fixes, and operational milestone
 * **lesson**: Use standard library `zipfile` and `xml.etree.ElementTree` to parse Office Open XML shared strings and sheet XML; always ensure test fixtures reset global settings (`settings.LLM_PROVIDER`) to avoid state pollution across downstream integration tests.
 * **evidence**: Sandboxed builds could not run binary wheels for heavy parsers; standard library XML parsing parsed `.xlsx` tables in milliseconds, and resetting provider state restored 100% pass rate across all 228 test cases.
 
+---
+
+## EXP-007: Operationalizing Diligence Red Flags into Definitive Agreement Protections
+* **cue**: When structuring investment committee outputs and closing deliverables from identified risks.
+* **lesson**: Diligence findings must not stop at passive reporting; map each material finding directly to an enforceable contract mechanism (Closing Condition Precedent, Indemnity Escrow Holdback with explicit survival timeline, or Negative Board Covenant) paired with a 100-Day post-close value creation milestone.
+* **evidence**: Converting customer concentration (35% ARR) and founder IP ambiguity into a $3.0M special indemnity escrow and an IP transfer CP established concrete legal risk mitigation and satisfied PE investment committee underwriting standards.
+
+
