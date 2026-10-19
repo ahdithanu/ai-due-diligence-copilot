@@ -270,6 +270,13 @@ export const CapTableWaterfallView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <a
+            href="/api/v1/investments/inv-1/financial-model/download-xlsx?company_name=Acme%20SaaS%20AI&arr=10000000&valuation=50000000"
+            download
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5"
+          >
+            <span>📊</span> Export Model (.xlsx)
+          </a>
           <button
             onClick={() => setShowEditor(!showEditor)}
             className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors border border-slate-700"

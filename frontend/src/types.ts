@@ -635,3 +635,88 @@ export interface DocumentUploadResponse {
   status: string;
 }
 
+// Diligence Workstream Checklist Types
+export type WorkstreamCategory =
+  | 'FINANCIAL_QOE'
+  | 'COMMERCIAL_GTM'
+  | 'TECHNICAL_PRODUCT'
+  | 'LEGAL_REGULATORY'
+  | 'MANAGEMENT_HR'
+  | 'TAX_STRUCTURE';
+
+export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED';
+
+export interface ChecklistTask {
+  id: string;
+  title: string;
+  workstream: WorkstreamCategory;
+  priority: TaskPriority;
+  status: TaskStatus;
+  assigned_to: string;
+  findings_summary?: string;
+  flags_count: number;
+  due_date?: string;
+  evidence_chunk_ids: string[];
+}
+
+export interface WorkstreamSummary {
+  workstream: WorkstreamCategory;
+  display_name: string;
+  total_tasks: number;
+  completed_tasks: number;
+  completion_pct: number;
+  blocked_tasks: number;
+  status: string;
+}
+
+export interface DiligenceChecklistResponse {
+  investment_id: string;
+  overall_progress_pct: number;
+  workstreams: WorkstreamSummary[];
+  tasks: ChecklistTask[];
+}
+
+// Valuation Comps & Football Field Types
+export interface PeerCompanyComp {
+  ticker: string;
+  name: string;
+  ev_revenue_multiple: number;
+  ev_ebitda_multiple?: number;
+  growth_rate_pct: number;
+  gross_margin_pct: number;
+  rule_of_40_pct: number;
+}
+
+export interface PrecedentTransactionComp {
+  target: string;
+  acquirer: string;
+  year: number;
+  ev_arr_multiple: number;
+  deal_size_usd: number;
+}
+
+export interface ValuationMethodologyRange {
+  methodology_name: string;
+  low_valuation_usd: number;
+  median_valuation_usd: number;
+  high_valuation_usd: number;
+  multiple_metric: string;
+}
+
+export interface ValuationCompsResponse {
+  investment_id: string;
+  company_name: string;
+  current_arr_usd: number;
+  current_valuation_usd: number;
+  implied_low_valuation_usd: number;
+  implied_median_valuation_usd: number;
+  implied_high_valuation_usd: number;
+  methodology_ranges: ValuationMethodologyRange[];
+  public_peers: PeerCompanyComp[];
+  precedent_deals: PrecedentTransactionComp[];
+  target_rule_of_40_pct: number;
+  peer_median_rule_of_40_pct: number;
+}
+
+

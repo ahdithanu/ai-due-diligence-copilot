@@ -811,6 +811,111 @@ class SalesforceDataCloudSyncResult(BaseModel):
     duration_ms: float
 
 
+# Diligence Workstream Checklist Schemas
+class WorkstreamCategory(str, Enum):
+    FINANCIAL_QOE = "FINANCIAL_QOE"
+    COMMERCIAL_GTM = "COMMERCIAL_GTM"
+    TECHNICAL_PRODUCT = "TECHNICAL_PRODUCT"
+    LEGAL_REGULATORY = "LEGAL_REGULATORY"
+    MANAGEMENT_HR = "MANAGEMENT_HR"
+    TAX_STRUCTURE = "TAX_STRUCTURE"
 
 
+class TaskPriority(str, Enum):
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
 
+
+class TaskStatus(str, Enum):
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    BLOCKED = "BLOCKED"
+    COMPLETED = "COMPLETED"
+
+
+class ChecklistTask(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    workstream: WorkstreamCategory
+    priority: TaskPriority = TaskPriority.MEDIUM
+    status: TaskStatus = TaskStatus.NOT_STARTED
+    assigned_to: str = "Deal Lead"
+    findings_summary: Optional[str] = None
+    flags_count: int = 0
+    due_date: Optional[str] = None
+    evidence_chunk_ids: List[str] = Field(default_factory=list)
+
+
+class WorkstreamSummary(BaseModel):
+    workstream: WorkstreamCategory
+    display_name: str
+    total_tasks: int
+    completed_tasks: int
+    completion_pct: float
+    blocked_tasks: int
+    status: str
+
+
+class DiligenceChecklistResponse(BaseModel):
+    investment_id: str
+    overall_progress_pct: float
+    workstreams: List[WorkstreamSummary]
+    tasks: List[ChecklistTask]
+
+
+class CreateTaskRequest(BaseModel):
+    title: str
+    workstream: WorkstreamCategory
+    priority: TaskPriority = TaskPriority.MEDIUM
+    assigned_to: str = "Deal Lead"
+    findings_summary: Optional[str] = None
+
+
+class UpdateTaskRequest(BaseModel):
+    status: Optional[TaskStatus] = None
+    findings_summary: Optional[str] = None
+    flags_count: Optional[int] = None
+    assigned_to: Optional[str] = None
+
+
+# Valuation Comps & Football Field Schemas
+class PeerCompanyComp(BaseModel):
+    ticker: str
+    name: str
+    ev_revenue_multiple: float
+    ev_ebitda_multiple: Optional[float] = None
+    growth_rate_pct: float
+    gross_margin_pct: float
+    rule_of_40_pct: float
+
+
+class PrecedentTransactionComp(BaseModel):
+    target: str
+    acquirer: str
+    year: int
+    ev_arr_multiple: float
+    deal_size_usd: float
+
+
+class ValuationMethodologyRange(BaseModel):
+    methodology_name: str
+    low_valuation_usd: float
+    median_valuation_usd: float
+    high_valuation_usd: float
+    multiple_metric: str
+
+
+class ValuationCompsResponse(BaseModel):
+    investment_id: str
+    company_name: str
+    current_arr_usd: float
+    current_valuation_usd: float
+    implied_low_valuation_usd: float
+    implied_median_valuation_usd: float
+    implied_high_valuation_usd: float
+    methodology_ranges: List[ValuationMethodologyRange]
+    public_peers: List[PeerCompanyComp]
+    precedent_deals: List[PrecedentTransactionComp]
+    target_rule_of_40_pct: float
+    peer_median_rule_of_40_pct: float

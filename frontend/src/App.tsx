@@ -20,6 +20,8 @@ import { VectorRAGExplorer } from './components/VectorRAGExplorer';
 import { EnterpriseSecurityView } from './components/EnterpriseSecurityView';
 import { LLMProviderSwitcher } from './components/LLMProviderSwitcher';
 import { DataRoomUploader } from './components/DataRoomUploader';
+import { DiligenceChecklistView } from './components/DiligenceChecklistView';
+import { ValuationCompsView } from './components/ValuationCompsView';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -35,7 +37,7 @@ export const App: React.FC = () => {
 
   // Top Level Navigation Tab
   const [mainNavTab, setMainNavTab] = useState<
-    'workspaces' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
+    'workspaces' | 'checklist' | 'valuation_comps' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
   >('workspaces');
 
 
@@ -387,6 +389,26 @@ export const App: React.FC = () => {
                 <span>🏢</span> Workspaces
               </button>
               <button
+                onClick={() => setMainNavTab('checklist')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'checklist'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>📋</span> Diligence Checklist
+              </button>
+              <button
+                onClick={() => setMainNavTab('valuation_comps')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'valuation_comps'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>🏟️</span> Valuation &amp; Comps
+              </button>
+              <button
                 onClick={() => setMainNavTab('cap_table')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   mainNavTab === 'cap_table'
@@ -521,7 +543,16 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        {mainNavTab === 'cap_table' ? (
+        {mainNavTab === 'checklist' ? (
+          <DiligenceChecklistView
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+          />
+        ) : mainNavTab === 'valuation_comps' ? (
+          <ValuationCompsView
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+            companyName={diligenceState?.company_name || 'Acme SaaS AI'}
+          />
+        ) : mainNavTab === 'cap_table' ? (
           <CapTableWaterfallView />
         ) : mainNavTab === 'sensitivity' ? (
           <SensitivityStressView />
