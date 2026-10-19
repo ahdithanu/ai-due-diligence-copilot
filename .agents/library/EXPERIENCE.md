@@ -36,3 +36,11 @@ Documented lessons from system development, bug fixes, and operational milestone
 * **cue**: When routing user queries that mention shared domain entities (e.g., "data room").
 * **lesson**: Gate entity nouns with explicit action verbs (e.g. `(request|need|upload).*(data\s*room)`) rather than bare keywords.
 * **evidence**: The prompt "summarize risks in the data room" was misclassified as `DOCUMENT_REQUEST` instead of `DILIGENCE_QUERY` until the pattern was gated with action verbs, driving intent classification accuracy from 87% to 100%.
+
+---
+
+## EXP-006: Dependency-Free Spreadsheets and Test State Isolation for Live Settings
+* **cue**: When ingesting Excel `.xlsx` files without third-party C dependencies, and when testing runtime global configuration mutations.
+* **lesson**: Use standard library `zipfile` and `xml.etree.ElementTree` to parse Office Open XML shared strings and sheet XML; always ensure test fixtures reset global settings (`settings.LLM_PROVIDER`) to avoid state pollution across downstream integration tests.
+* **evidence**: Sandboxed builds could not run binary wheels for heavy parsers; standard library XML parsing parsed `.xlsx` tables in milliseconds, and resetting provider state restored 100% pass rate across all 228 test cases.
+
