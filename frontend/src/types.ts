@@ -819,5 +819,94 @@ export interface ExternalIntelligenceResponse {
   data_source: string;
 }
 
+// Arca Long-Horizon Autonomous Engine Types
+export type SignalType =
+  | 'DATA_ROOM_FILE_DROPPED'
+  | 'FOUNDER_EMAIL_RECEIVED'
+  | 'TASK_COMPLETED_BY_HUMAN'
+  | 'SCHEDULED_TIMER_WAKE'
+  | 'CUSTODIAN_SETTLEMENT_EVENT'
+  | 'MARKET_BENCHMARK_SHIFT'
+  | 'MANDATE_PROPAGATED';
+
+export type SignalSource =
+  | 'EXTERNAL_WORLD'
+  | 'INTERNAL_UI'
+  | 'AGENT_SCHEDULE'
+  | 'CUSTODIAN_API';
+
+export interface SignalEvent {
+  id: string;
+  investment_id: string;
+  signal_type: SignalType;
+  source: SignalSource;
+  title: string;
+  payload: Record<string, any>;
+  created_at: string;
+  processed: boolean;
+  acting_agents: string[];
+}
+
+export interface AgentSubscription {
+  id: string;
+  agent_name: string;
+  investment_id: string;
+  interested_signal_types: SignalType[];
+  wake_condition: string;
+  schedule_interval_sec?: number;
+  last_woken_at?: string;
+}
+
+export interface DurableConstraint {
+  id: string;
+  investment_id: string;
+  category: string;
+  rule_text: string;
+  source: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PartnerActionItem {
+  id: string;
+  investment_id: string;
+  agent_proposer: string;
+  priority: 'CRITICAL' | 'HIGH' | 'ROUTINE' | string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | string;
+  headline: string;
+  background_work_summary: string;
+  precomputed_impact: Record<string, any>;
+  action_type: string;
+  one_click_action_label: string;
+  proposed_payload: Record<string, any>;
+  resolution_notes?: string;
+  created_at: string;
+}
+
+export interface FirmStrategicMandate {
+  id: string;
+  mandate_name: string;
+  description: string;
+  target_frequency: string;
+  enforcement_level: string;
+  active: boolean;
+  created_by: string;
+  deals_enforced_count: number;
+}
+
+export interface LongHorizonSpaceResponse {
+  investment_id: string;
+  company_name: string;
+  active_agents_count: number;
+  signals_processed_count: number;
+  pending_actions_count: number;
+  pending_actions: PartnerActionItem[];
+  recent_signals: SignalEvent[];
+  durable_constraints: DurableConstraint[];
+  active_mandates: FirmStrategicMandate[];
+  subscriptions: AgentSubscription[];
+}
+
+
 
 

@@ -1035,3 +1035,119 @@ class ExternalIntelligenceResponse(BaseModel):
     executive_team: List[ExecutiveProfile]
     org_health: OrganizationalHealthMetrics
     data_source: str = "PitchBook & Crunchbase Enterprise Feeds"
+
+
+# Arca Long-Horizon Autonomous Firm Primitives
+class SignalType(str, Enum):
+    DATA_ROOM_FILE_DROPPED = "DATA_ROOM_FILE_DROPPED"
+    FOUNDER_EMAIL_RECEIVED = "FOUNDER_EMAIL_RECEIVED"
+    TASK_COMPLETED_BY_HUMAN = "TASK_COMPLETED_BY_HUMAN"
+    SCHEDULED_TIMER_WAKE = "SCHEDULED_TIMER_WAKE"
+    CUSTODIAN_SETTLEMENT_EVENT = "CUSTODIAN_SETTLEMENT_EVENT"
+    MARKET_BENCHMARK_SHIFT = "MARKET_BENCHMARK_SHIFT"
+    MANDATE_PROPAGATED = "MANDATE_PROPAGATED"
+
+
+class SignalSource(str, Enum):
+    EXTERNAL_WORLD = "EXTERNAL_WORLD"
+    INTERNAL_UI = "INTERNAL_UI"
+    AGENT_SCHEDULE = "AGENT_SCHEDULE"
+    CUSTODIAN_API = "CUSTODIAN_API"
+
+
+class SignalEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    investment_id: str
+    signal_type: SignalType
+    source: SignalSource
+    title: str
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+    processed: bool = True
+    acting_agents: List[str] = Field(default_factory=list)
+
+
+class AgentSubscription(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    agent_name: str
+    investment_id: str
+    interested_signal_types: List[SignalType]
+    wake_condition: str
+    schedule_interval_sec: Optional[int] = None
+    last_woken_at: Optional[str] = None
+
+
+class DurableConstraint(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    investment_id: str
+    category: str
+    rule_text: str
+    source: str
+    is_active: bool = True
+    created_at: str
+
+
+class PartnerActionItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    investment_id: str
+    agent_proposer: str
+    priority: str = "HIGH"  # CRITICAL, HIGH, ROUTINE
+    status: str = "PENDING_APPROVAL"  # PENDING_APPROVAL, APPROVED, REJECTED
+    headline: str
+    background_work_summary: str
+    precomputed_impact: Dict[str, Any] = Field(default_factory=dict)
+    action_type: str
+    one_click_action_label: str
+    proposed_payload: Dict[str, Any] = Field(default_factory=dict)
+    resolution_notes: Optional[str] = None
+    created_at: str
+
+
+class FirmStrategicMandate(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    mandate_name: str
+    description: str
+    target_frequency: str
+    enforcement_level: str
+    active: bool = True
+    created_by: str = "Investment Committee Chair"
+    deals_enforced_count: int = 1
+
+
+class LongHorizonSpaceResponse(BaseModel):
+    investment_id: str
+    company_name: str
+    active_agents_count: int
+    signals_processed_count: int
+    pending_actions_count: int
+    pending_actions: List[PartnerActionItem]
+    recent_signals: List[SignalEvent]
+    durable_constraints: List[DurableConstraint]
+    active_mandates: List[FirmStrategicMandate]
+    subscriptions: List[AgentSubscription]
+
+
+class IngestSignalRequest(BaseModel):
+    signal_type: SignalType
+    source: SignalSource = SignalSource.EXTERNAL_WORLD
+    title: str
+    payload: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ResolveActionRequest(BaseModel):
+    approved: bool
+    resolution_notes: Optional[str] = None
+
+
+class CreateConstraintRequest(BaseModel):
+    category: str
+    rule_text: str
+    source: str = "Deal Lead Direct Note"
+
+
+class CreateMandateRequest(BaseModel):
+    mandate_name: str
+    description: str
+    target_frequency: str = "ON_EVALUATION"
+    enforcement_level: str = "MANDATORY_ALL_DEALS"
+

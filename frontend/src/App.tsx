@@ -24,6 +24,7 @@ import { DiligenceChecklistView } from './components/DiligenceChecklistView';
 import { ValuationCompsView } from './components/ValuationCompsView';
 import { RemediationCovenantsView } from './components/RemediationCovenantsView';
 import { ExternalIntelligenceView } from './components/ExternalIntelligenceView';
+import { LongHorizonDealSpaceView } from './components/LongHorizonDealSpaceView';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -39,7 +40,7 @@ export const App: React.FC = () => {
 
   // Top Level Navigation Tab
   const [mainNavTab, setMainNavTab] = useState<
-    'workspaces' | 'checklist' | 'valuation_comps' | 'remediation' | 'external_intel' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
+    'workspaces' | 'long_horizon' | 'checklist' | 'valuation_comps' | 'remediation' | 'external_intel' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
   >('workspaces');
 
 
@@ -391,6 +392,16 @@ export const App: React.FC = () => {
                 <span>🏢</span> Workspaces
               </button>
               <button
+                onClick={() => setMainNavTab('long_horizon')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'long_horizon'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>⏱️</span> Autonomous Deal Space (Arca)
+              </button>
+              <button
                 onClick={() => setMainNavTab('checklist')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   mainNavTab === 'checklist'
@@ -565,7 +576,12 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        {mainNavTab === 'checklist' ? (
+        {mainNavTab === 'long_horizon' ? (
+          <LongHorizonDealSpaceView
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+            companyName={diligenceState?.company_name || 'Acme SaaS AI'}
+          />
+        ) : mainNavTab === 'checklist' ? (
           <DiligenceChecklistView
             investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
           />

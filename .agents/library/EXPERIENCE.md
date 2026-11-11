@@ -51,4 +51,12 @@ Documented lessons from system development, bug fixes, and operational milestone
 * **lesson**: Diligence findings must not stop at passive reporting; map each material finding directly to an enforceable contract mechanism (Closing Condition Precedent, Indemnity Escrow Holdback with explicit survival timeline, or Negative Board Covenant) paired with a 100-Day post-close value creation milestone.
 * **evidence**: Converting customer concentration (35% ARR) and founder IP ambiguity into a $3.0M special indemnity escrow and an IP transfer CP established concrete legal risk mitigation and satisfied PE investment committee underwriting standards.
 
+---
+
+## EXP-008: Inverting the Prompting Paradigm (Arca Long-Horizon Autonomous Firm Architecture)
+* **cue**: When designing agent architectures for enterprise workflows spanning weeks or months (stop-start with many handoffs).
+* **lesson**: Long-horizon work is not agents grinding tokens for days; it is reactive agents registered on external signals (data room file drops, founder emails, settlement events), enforcing durable entity memory across weeks, and inverting prompting so agents prompt humans with 1-click approvals after doing 90% of the analytical groundwork. Resolving an action in the UI must itself emit an internal signal that triggers downstream agents.
+* **evidence**: Ingesting a Cap Table spreadsheet drop autonomously triggered Cap Table & Dilution Sentry Agents, calculated liquidation waterfall impact against durable constraints, and presented the deal team with a 1-click inquiry dispatch; partner approval then emitted an internal event closing the loop across 237 passing tests.
+
+
 
