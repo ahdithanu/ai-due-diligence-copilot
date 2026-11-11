@@ -65,6 +65,18 @@ Documented lessons from system development, bug fixes, and operational milestone
 * **lesson**: "Every staff edit has a why." Mandatory human justification creates the highest-value eval dataset possible: paired triples of (agent proposal, staff override, rationale). Coupled with a periodic deal "dreaming" reflection process that consolidates asynchronous signals into invariants, deterministic edge artifact scrubbers (PII/wire/promissory returns), and contract trap scanners ($240k/yr related-party retainers, non-fiduciary disclaimers, 2.0x liquidation ratchets), this guarantees continuous model improvement and 100% benchmark regression defense. In FastAPI routing, static sub-resources must never be eclipsed by parameterized wildcard paths (`/investments/{investment_id}`).
 * **evidence**: Implemented `eval/arca_golden_dataset.json` and `eval/run_arca_evals.py` covering 4 core categories; verified 100% pass rate across all benchmark test cases and 243 full pytest tests; delivered interactive UI in `ArcaFirmCommandCenter.tsx` with operational knowledge editing, deal dreaming reflection, staff feedback logging, edge artifact verification, and 1-click benchmark evaluation.
 
+---
+
+## EXP-010: Production-Grade Forward-Deployed Evaluation Infrastructure (Rogan-Gladen, 4-Stage Trace Validation, & Context-Swapping)
+* **cue**: When evaluating complex multi-step agents, RAG pipelines, or deploying AI into enterprise environments where raw LLM-as-judge scores mislead stakeholders.
+* **lesson**: Off-the-shelf LLM judges and unweighted pass rates create an illusion of safety. Rigorous FDE evaluation demands four architectural boundaries:
+  1. Statistical calibration via the Rogan-Gladen adjustment ($\hat{\theta} = \frac{p_{\text{obs}} + \text{TNR} - 1}{\text{TPR} + \text{TNR} - 1}$) and empirical bootstrap confidence intervals rather than raw percent agreement or uncalibrated point estimates.
+  2. 4-Stage tool execution decomposition (ToolSelection -> GenArgs -> ExecTool -> HandleOut) paired with Transition Failure Heatmaps to pinpoint whether errors stem from prompt descriptions, Pydantic bounds, DB infrastructure, or context ingestion.
+  3. Decoupled RAG diagnostics separating retrieval ranking (Recall@k, MRR, lost-in-the-middle) from generation faithfulness via context-swapping tests that expose parametric hallucinations.
+  4. Train/dev/test dataset splits with clean baseline counter-probes (including negation handling for negative covenants like *"no monitoring fees are payable"*).
+* **evidence**: Shipped `eval/rogan_gladen.py`, `eval/tool_trace_validator.py`, and `eval/rag_diagnostics.py` with 8 dedicated tests in `tests/test_fde_eval_tools.py`, verified with 251 passing tests across the repository.
+
+
 
 
 

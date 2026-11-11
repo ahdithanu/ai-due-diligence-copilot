@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 from datetime import datetime, timezone
 import uuid
 from pydantic import BaseModel, Field
@@ -1225,6 +1225,9 @@ class ArcaEvalScorecard(BaseModel):
     hidden_fee_detection_score_pct: float
     model_tiering_cost_efficiency_pct: float
     overall_firm_eval_pass_rate_pct: float
+    risk_weighted_overall_score_pct: Optional[float] = None
+    bootstrap_95_ci: Optional[Tuple[float, float]] = None
+    context_swapping_test_passed: Optional[bool] = None
     case_details: List[Dict[str, Any]] = Field(default_factory=list)
 
 

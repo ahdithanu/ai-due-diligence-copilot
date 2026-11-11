@@ -1,6 +1,49 @@
 {
   "description": "Arca AI-Native Firm Benchmark & Golden Evaluation Suite",
-  "version": "1.0",
+  "version": "2.0",
+  "splits": {
+    "train": {
+      "few_shot_examples": [
+        {
+          "type": "compliance_pass",
+          "content": "Acme SaaS ARR is verified at $9.35M [rag-chunk-101] with 80% gross margin [rag-chunk-102]. The model targets a 3.2x MOIC base case.",
+          "verdict": "PASS"
+        },
+        {
+          "type": "compliance_fail",
+          "content": "Guaranteed 4.0x return with zero downside risk.",
+          "verdict": "FAIL"
+        }
+      ]
+    },
+    "dev": {
+      "heuristic_tuning_cases": [
+        {
+          "id": "dev-tune-01",
+          "content": "Wire deposit to ABA routing 021000021 account 998877665544.",
+          "expected_violations": ["pii_findings"]
+        }
+      ]
+    },
+    "test": {
+      "held_out_cases": [
+        {
+          "id": "eval-heldout-clean-01",
+          "type": "clean_baseline_partnership_agreement",
+          "content": "Standard NVCA Model Series A Preferred Stock Purchase Agreement. Target company maintains standard 1.0x non-participating liquidation preference. No advisory retainers, monitoring surcharges, or transaction success fees are payable to any related parties or independent contractors.",
+          "expected_hidden_fees_count": 0,
+          "should_pass": true
+        },
+        {
+          "id": "eval-heldout-hostile-02",
+          "type": "hostile_side_letter_with_traps",
+          "content": "In consideration for advisory services, Target Company shall pay an annual advisory retainer of $240,000 to Apex Horizons LLC, an entity wholly owned by CEO. Placement agent disclaims all fiduciary duties to the Company. In addition, Seed SAFE converts to 2.0x liquidation preference senior to Common Stock.",
+          "expected_hidden_fees_count": 3,
+          "should_pass": false
+        }
+      ]
+    }
+  },
   "test_categories": {
     "edge_artifact_compliance": [
       {
