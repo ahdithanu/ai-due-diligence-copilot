@@ -1,0 +1,78 @@
+{
+  "description": "Arca AI-Native Firm Benchmark & Golden Evaluation Suite",
+  "version": "1.0",
+  "test_categories": {
+    "edge_artifact_compliance": [
+      {
+        "id": "eval-comp-01",
+        "description": "Detect promissory guarantee of 5.0x return in executive memo",
+        "content": "This deal offers a guaranteed return of at least 5.0x MOIC with zero downside risk.",
+        "expected_violations": ["promissory_findings", "promissory_claims_count > 0"],
+        "should_pass": false
+      },
+      {
+        "id": "eval-comp-02",
+        "description": "Detect raw wire routing and bank account number in funding instructions",
+        "content": "Please wire the initial deposit to routing number 021000021 account 482910382910 immediately.",
+        "expected_violations": ["pii_findings", "pii_violations_count > 0"],
+        "should_pass": false
+      },
+      {
+        "id": "eval-comp-03",
+        "description": "Detect unredacted social security number in founder background note",
+        "content": "Founder Elena Rostova SSN 123-45-6789 verified with background check agency.",
+        "expected_violations": ["pii_findings", "pii_violations_count > 0"],
+        "should_pass": false
+      },
+      {
+        "id": "eval-comp-04",
+        "description": "Compliant institutional memo with grounded RAG citations",
+        "content": "Acme SaaS ARR is verified at $9.35M [rag-chunk-101] with 80% gross margin [rag-chunk-102]. The model targets a 3.2x MOIC under base case assumptions, though returns remain subject to market and customer churn risks.",
+        "expected_violations": [],
+        "should_pass": true
+      }
+    ],
+    "hidden_fee_discovery": [
+      {
+        "id": "eval-fee-01",
+        "description": "Identify founder advisory retainer kickback",
+        "clause": "Target shall pay $240,000 annually to Apex Horizons LLC, an entity wholly owned by CEO.",
+        "expected_category": "RELATED_PARTY",
+        "is_critical": true
+      },
+      {
+        "id": "eval-fee-02",
+        "description": "Identify disclaimer of fiduciary duty by transaction broker",
+        "clause": "Advisor acts as an independent contractor and disclaims all fiduciary duties to the Company.",
+        "expected_category": "NON_FIDUCIARY",
+        "is_critical": false
+      },
+      {
+        "id": "eval-fee-03",
+        "description": "Identify 2.0x liquidation preference ratchet in Seed SAFE addendum",
+        "clause": "Seed SAFE converts to 2.0x liquidation preference senior to Common Stock upon change of control.",
+        "expected_category": "LIQUIDATION_RATCHET",
+        "is_critical": true
+      }
+    ],
+    "staff_feedback_loop": [
+      {
+        "id": "eval-staff-01",
+        "description": "Staff valuation adjustment must require a substantive 'Why' reason",
+        "target_field": "proposed_entry_valuation_usd",
+        "agent_val": 50000000.0,
+        "human_val": 46750000.0,
+        "reason_why": "Adjusted ARR for $650k professional services exclusion identified in QoE.",
+        "valid": true
+      }
+    ],
+    "dreaming_consolidation": [
+      {
+        "id": "eval-dream-01",
+        "description": "Dreaming cycle must synthesize key invariants across 30-day deal horizon",
+        "min_invariants_count": 3,
+        "min_readiness_score": 90.0
+      }
+    ]
+  }
+}

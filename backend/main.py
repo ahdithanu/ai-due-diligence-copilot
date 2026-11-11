@@ -20,6 +20,7 @@ from backend.api.salesforce import router as salesforce_router
 from backend.api.settings import router as settings_router
 from backend.api.diligence_hub import router as diligence_hub_router
 from backend.api.long_horizon import router as long_horizon_router
+from backend.api.arca_firm import router as arca_firm_router
 
 from os import path
 from fastapi.staticfiles import StaticFiles
@@ -65,6 +66,7 @@ app.include_router(salesforce_router, prefix=settings.API_V1_STR)
 app.include_router(settings_router, prefix=settings.API_V1_STR)
 app.include_router(diligence_hub_router, prefix=settings.API_V1_STR)
 app.include_router(long_horizon_router, prefix=settings.API_V1_STR)
+app.include_router(arca_firm_router, prefix=settings.API_V1_STR)
 
 
 # Mount frontend static assets if dist directory exists

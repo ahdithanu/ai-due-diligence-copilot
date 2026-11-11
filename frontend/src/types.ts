@@ -907,6 +907,95 @@ export interface LongHorizonSpaceResponse {
   subscriptions: AgentSubscription[];
 }
 
+export interface DreamingRunResponse {
+  investment_id: string;
+  company_name: string;
+  last_dreamed_at: string;
+  signals_consolidated_count: number;
+  key_invariants_updated: string[];
+  resolved_contradictions: string[];
+  synthesized_deal_state_summary: string;
+  agent_readiness_score: number;
+  recommended_next_horizon_actions: string[];
+}
+
+export interface StaffEditFeedbackRecord {
+  id: string;
+  investment_id: string;
+  target_field: string;
+  agent_original_value: any;
+  human_adjusted_value: any;
+  reason_why: string;
+  editor_role: string;
+  created_at: string;
+  eval_candidate_id: string;
+  status: string;
+}
+
+export interface ArtifactComplianceReport {
+  artifact_name: string;
+  passed: boolean;
+  pii_violations_count: number;
+  promissory_claims_count: number;
+  violations: string[];
+  sanitized_content: string;
+  audit_timestamp: string;
+}
+
+export interface HiddenFeeFinding {
+  id: string;
+  category: 'RELATED_PARTY' | 'NON_FIDUCIARY' | 'LIQUIDATION_RATCHET' | 'ESCROW_HOLDBACK' | string;
+  document_source: string;
+  clause_text: string;
+  annual_drag_usd: number;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  recommendation: string;
+}
+
+export interface HiddenFeeScanResponse {
+  investment_id: string;
+  scanned_at: string;
+  total_annual_drag_usd: number;
+  findings: HiddenFeeFinding[];
+  has_non_fiduciary_language: boolean;
+  has_senior_ratchet: boolean;
+}
+
+export interface OperationalKnowledgeItem {
+  id: string;
+  title: string;
+  category: string;
+  filename: string;
+  content_markdown: string;
+  last_modified: string;
+  last_editor: string;
+  citations_count: number;
+}
+
+export interface ArcaEvalCaseResult {
+  case_id: string;
+  category: string;
+  scenario: string;
+  passed: boolean;
+  score_pct: number;
+  details: string;
+  error_msg?: string;
+}
+
+export interface ArcaEvalScorecard {
+  timestamp: string;
+  total_test_cases: number;
+  passed_cases: number;
+  failed_cases: number;
+  overall_firm_eval_pass_rate_pct: number;
+  edge_artifact_compliance_score_pct: number;
+  hidden_fee_detection_score_pct: number;
+  staff_feedback_capture_score_pct: number;
+  dreaming_synthesis_score_pct: number;
+  case_details: ArcaEvalCaseResult[];
+}
+
+
 
 
 

@@ -1151,3 +1151,93 @@ class CreateMandateRequest(BaseModel):
     target_frequency: str = "ON_EVALUATION"
     enforcement_level: str = "MANDATORY_ALL_DEALS"
 
+
+# Arca Firm Capabilities & Golden Eval Set Schemas
+class DreamingRunResponse(BaseModel):
+    investment_id: str
+    timestamp: str
+    signals_consolidated_count: int
+    unresolved_contradictions_resolved: int
+    synthesized_deal_state_summary: str
+    key_invariants_updated: List[str]
+    next_critical_milestones: List[str]
+    agent_readiness_score: float
+
+
+class StaffEditFeedbackRecord(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    investment_id: str
+    timestamp: str
+    target_field: str
+    agent_original_value: Any
+    human_adjusted_value: Any
+    reason_why: str
+    editor_role: str = "Deal Lead"
+    agent_trace_id: str
+    eval_candidate_id: str
+
+
+class ArtifactComplianceReport(BaseModel):
+    artifact_name: str
+    passed: bool
+    pii_violations_count: int
+    pii_findings: List[str]
+    promissory_claims_count: int
+    promissory_findings: List[str]
+    ungrounded_claims_count: int
+    ungrounded_findings: List[str]
+    sanitized_content: Optional[str] = None
+
+
+class HiddenFeeFinding(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    category: str  # MONITORING_FEE, TRANSACTION_FEE, LIQUIDATION_RATCHET, RELATED_PARTY, NON_FIDUCIARY
+    title: str
+    document_source: str
+    clause_text: str
+    annual_financial_drag_usd: float
+    fiduciary_risk_level: str  # CRITICAL, HIGH, MEDIUM
+    recommended_remediation: str
+
+
+class HiddenFeeScanResponse(BaseModel):
+    investment_id: str
+    total_annual_drag_usd: float
+    findings: List[HiddenFeeFinding]
+    non_fiduciary_agreements_flagged: int
+
+
+class OperationalKnowledgeItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    category: str
+    content_markdown: str
+    last_edited_by: str = "Head of Private Equity Operations"
+    updated_at: str
+    citations_count: int = 0
+
+
+class ArcaEvalScorecard(BaseModel):
+    total_eval_cases: int
+    dreaming_synthesis_score_pct: float
+    staff_feedback_capture_score_pct: float
+    edge_artifact_compliance_score_pct: float
+    hidden_fee_detection_score_pct: float
+    model_tiering_cost_efficiency_pct: float
+    overall_firm_eval_pass_rate_pct: float
+    case_details: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class StaffEditRequest(BaseModel):
+    target_field: str
+    agent_original_value: Any
+    human_adjusted_value: Any
+    reason_why: str
+    editor_role: str = "Deal Lead"
+
+
+class VerifyArtifactRequest(BaseModel):
+    artifact_name: str
+    content: str
+
+

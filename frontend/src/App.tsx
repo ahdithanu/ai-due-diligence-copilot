@@ -25,6 +25,7 @@ import { ValuationCompsView } from './components/ValuationCompsView';
 import { RemediationCovenantsView } from './components/RemediationCovenantsView';
 import { ExternalIntelligenceView } from './components/ExternalIntelligenceView';
 import { LongHorizonDealSpaceView } from './components/LongHorizonDealSpaceView';
+import { ArcaFirmCommandCenter } from './components/ArcaFirmCommandCenter';
 
 export const App: React.FC = () => {
   const [investments, setInvestments] = useState<InvestmentSummary[]>([]);
@@ -40,7 +41,7 @@ export const App: React.FC = () => {
 
   // Top Level Navigation Tab
   const [mainNavTab, setMainNavTab] = useState<
-    'workspaces' | 'long_horizon' | 'checklist' | 'valuation_comps' | 'remediation' | 'external_intel' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
+    'workspaces' | 'arca_firm' | 'long_horizon' | 'checklist' | 'valuation_comps' | 'remediation' | 'external_intel' | 'cap_table' | 'sensitivity' | 'diligence_chat' | 'ic_audio' | 'lp_teaser' | 'comparison' | 'risk_radar' | 'failure_lab' | 'fde_ops' | 'vector_rag' | 'security'
   >('workspaces');
 
 
@@ -392,6 +393,16 @@ export const App: React.FC = () => {
                 <span>🏢</span> Workspaces
               </button>
               <button
+                onClick={() => setMainNavTab('arca_firm')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  mainNavTab === 'arca_firm'
+                    ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <span>🏛️</span> Arca AI-Native Firm &amp; Evals
+              </button>
+              <button
                 onClick={() => setMainNavTab('long_horizon')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   mainNavTab === 'long_horizon'
@@ -576,7 +587,12 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        {mainNavTab === 'long_horizon' ? (
+        {mainNavTab === 'arca_firm' ? (
+          <ArcaFirmCommandCenter
+            investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
+            companyName={diligenceState?.company_name || 'Acme SaaS AI'}
+          />
+        ) : mainNavTab === 'long_horizon' ? (
           <LongHorizonDealSpaceView
             investmentId={selectedInvestmentId || (investments[0]?.investment_id || 'inv-1')}
             companyName={diligenceState?.company_name || 'Acme SaaS AI'}

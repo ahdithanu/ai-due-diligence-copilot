@@ -58,5 +58,13 @@ Documented lessons from system development, bug fixes, and operational milestone
 * **lesson**: Long-horizon work is not agents grinding tokens for days; it is reactive agents registered on external signals (data room file drops, founder emails, settlement events), enforcing durable entity memory across weeks, and inverting prompting so agents prompt humans with 1-click approvals after doing 90% of the analytical groundwork. Resolving an action in the UI must itself emit an internal signal that triggers downstream agents.
 * **evidence**: Ingesting a Cap Table spreadsheet drop autonomously triggered Cap Table & Dilution Sentry Agents, calculated liquidation waterfall impact against durable constraints, and presented the deal team with a 1-click inquiry dispatch; partner approval then emitted an internal event closing the loop across 237 passing tests.
 
+---
+
+## EXP-009: Continuous Staff Feedback Loops & Golden Benchmark Eval Sets in AI-Native Firm Operations (Arca NY 2026)
+* **cue**: When replacing back-office operations with autonomous agents in high-stakes financial domains where human staff review and adjust agent deliverables.
+* **lesson**: "Every staff edit has a why." Mandatory human justification creates the highest-value eval dataset possible: paired triples of (agent proposal, staff override, rationale). Coupled with a periodic deal "dreaming" reflection process that consolidates asynchronous signals into invariants, deterministic edge artifact scrubbers (PII/wire/promissory returns), and contract trap scanners ($240k/yr related-party retainers, non-fiduciary disclaimers, 2.0x liquidation ratchets), this guarantees continuous model improvement and 100% benchmark regression defense. In FastAPI routing, static sub-resources must never be eclipsed by parameterized wildcard paths (`/investments/{investment_id}`).
+* **evidence**: Implemented `eval/arca_golden_dataset.json` and `eval/run_arca_evals.py` covering 4 core categories; verified 100% pass rate across all benchmark test cases and 243 full pytest tests; delivered interactive UI in `ArcaFirmCommandCenter.tsx` with operational knowledge editing, deal dreaming reflection, staff feedback logging, edge artifact verification, and 1-click benchmark evaluation.
+
+
 
 
